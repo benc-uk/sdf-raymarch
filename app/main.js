@@ -7,10 +7,10 @@ import { initGL } from './gl.js'
 import { Camera } from './camera.js'
 
 const gl = initGL('canvas', {
-  width: 1200,
+  width: 400,
   height: 600,
   fitToContainer: true,
-  resizeCanvas: false,
+  resizeCanvas: true,
 })
 
 const fullScreenBuffInfo = twgl.createBufferInfoFromArrays(gl, {
@@ -25,18 +25,20 @@ const uniforms = {
   u_aspect: gl.canvas.width / gl.canvas.height,
   u_inverseViewProjectionMatrix: camera.inverseViewProjectionMatrix,
   u_camPos: camera.pos,
+  u_time: 0,
 }
 
 // May move some of this to the render loop later
 gl.useProgram(progInfo.program)
 twgl.setBuffersAndAttributes(gl, progInfo, fullScreenBuffInfo)
-twgl.setUniforms(progInfo, uniforms)
 
 // Classic WebGL render loop
-function render() {
+function render(ts) {
+  uniforms.u_time = ts * 0.001
+  twgl.setUniforms(progInfo, uniforms)
   twgl.drawBufferInfo(gl, fullScreenBuffInfo)
 
   requestAnimationFrame(render)
 }
 
-render()
+render(0)
