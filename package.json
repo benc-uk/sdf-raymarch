@@ -1,0 +1,19 @@
+{
+  "name": "sdf-fun",
+  "author": "Ben Coleman",
+  "description": "Ray marching signed distance fields with WebGL",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "twgl.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.9"
+  }
+}
