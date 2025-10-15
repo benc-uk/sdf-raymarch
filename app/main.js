@@ -7,8 +7,8 @@ import { initGL } from './gl.js'
 import { Camera } from './camera.js'
 
 const gl = initGL('canvas', {
-  width: 400,
-  height: 600,
+  width: 640,
+  height: 480,
   fitToContainer: true,
   resizeCanvas: true,
 })
@@ -26,6 +26,7 @@ const uniforms = {
   u_inverseViewProjectionMatrix: camera.inverseViewProjectionMatrix,
   u_camPos: camera.pos,
   u_time: 0,
+  u_lightPos: [5, 5, -5],
 }
 
 // May move some of this to the render loop later
