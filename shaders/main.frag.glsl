@@ -111,7 +111,7 @@ void main() {
     col += vec3(0.7) * spec;
 
     // Add some ambient light
-    col += vec3(0.05, 1.03, 0.1);
+    col += vec3(0.05, 0.93, 0.1);
   } else {
     // Background color
     col = vec3(0.0);
