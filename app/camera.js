@@ -11,6 +11,10 @@ export class Camera {
   #fov
   #up
   #aspectRatio
+  #viewMatrix
+  #projectionMatrix
+  #viewProjectionMatrix
+  #inverseViewProjectionMatrix
 
   /**
    * @param {[number, number, number]} pos - Camera position
@@ -25,35 +29,35 @@ export class Camera {
     this.#up = [0, 1, 0]
     this.#aspectRatio = aspectRatio
 
-    // Matrix properties
-    this.viewMatrix = null
-    this.projectionMatrix = null
-    this.viewProjectionMatrix = null
-    this.inverseViewProjectionMatrix = null
+    // Matrix properties, initialized to identity
+    this.#viewMatrix = twgl.m4.identity()
+    this.#projectionMatrix = twgl.m4.identity()
+    this.#viewProjectionMatrix = twgl.m4.identity()
+    this.#inverseViewProjectionMatrix = twgl.m4.identity()
 
     // Initialize matrices
-    this.updateProjectionMatrix(aspectRatio)
-    this.updateViewMatrix()
+    this._updateProjectionMatrix(aspectRatio)
+    this._updateViewMatrix()
   }
 
   /**
    * @param {number} aspectRatio
    */
-  updateProjectionMatrix(aspectRatio) {
-    this.projectionMatrix = twgl.m4.perspective(this.#fov, aspectRatio, 0.1, 100)
-    this.updateViewProjectionMatrix()
+  _updateProjectionMatrix(aspectRatio) {
+    this.#projectionMatrix = twgl.m4.perspective(this.#fov, aspectRatio, 0.1, 100)
+    this._updateViewProjectionMatrix()
   }
 
-  updateViewMatrix() {
+  _updateViewMatrix() {
     const cameraMatrix = twgl.m4.lookAt(this.pos, this.target, this.#up)
-    this.viewMatrix = twgl.m4.inverse(cameraMatrix)
-    this.updateViewProjectionMatrix()
+    this.#viewMatrix = twgl.m4.inverse(cameraMatrix)
+    this._updateViewProjectionMatrix()
   }
 
-  updateViewProjectionMatrix() {
-    if (this.projectionMatrix && this.viewMatrix) {
-      this.viewProjectionMatrix = twgl.m4.multiply(this.projectionMatrix, this.viewMatrix)
-      this.inverseViewProjectionMatrix = twgl.m4.inverse(this.viewProjectionMatrix)
+  _updateViewProjectionMatrix() {
+    if (this.#projectionMatrix && this.#viewMatrix) {
+      this.#viewProjectionMatrix = twgl.m4.multiply(this.#projectionMatrix, this.#viewMatrix)
+      this.#inverseViewProjectionMatrix = twgl.m4.inverse(this.#viewProjectionMatrix)
     }
   }
 
@@ -63,7 +67,7 @@ export class Camera {
 
   set pos(newPos) {
     this.#pos = newPos
-    this.updateViewMatrix()
+    this._updateViewMatrix()
   }
 
   get target() {
@@ -72,12 +76,12 @@ export class Camera {
 
   set target(newTarget) {
     this.#target = newTarget
-    this.updateViewMatrix()
+    this._updateViewMatrix()
   }
 
   set fov(newFov) {
     this.#fov = newFov
-    this.updateProjectionMatrix(this.projectionMatrix[0] / this.projectionMatrix[5])
+    this._updateProjectionMatrix(this.#projectionMatrix[0] / this.#projectionMatrix[5])
   }
 
   get fov() {
@@ -86,6 +90,10 @@ export class Camera {
 
   get aspectRatio() {
     return this.#aspectRatio
+  }
+
+  get inverseViewProjectionMatrix() {
+    return this.#inverseViewProjectionMatrix
   }
 
   update() {

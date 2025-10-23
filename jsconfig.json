@@ -5,5 +5,7 @@
     "target": "es2024",
     "moduleResolution": "nodenext",
     "module": "nodenext"
-  }
+  },
+  "include": ["app/**/*.js", "app/types.d.ts"],
+  "exclude": ["node_modules"]
 }
