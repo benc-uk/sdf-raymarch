@@ -8,12 +8,17 @@
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "lint": "eslint . --config .dev/eslint.config.mjs && npm run format:check",
+    "format": "prettier --config .dev/.prettierrc --write .",
+    "format:check": "prettier --config .dev/.prettierrc --check ."
   },
   "dependencies": {
     "twgl.js": "^7.0.0"
   },
   "devDependencies": {
+    "eslint": "^9.38.0",
+    "prettier": "^3.6.2",
     "vite": "^7.1.9"
   }
 }

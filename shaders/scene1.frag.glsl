@@ -4,12 +4,12 @@ precision highp float;
 in vec2 imgCoord;
 out vec4 pixel;
 
-uniform float u_aspect;
 uniform float u_time;
+uniform vec3 u_cameraPos;
+uniform mat4 u_inverseViewProjectionMatrix;
 
-const vec3 u_lightPos = vec3(15.0, 19.0, -15.0);
-const float EPSILON = 0.002;
-const float FOV = 0.5;
+const vec3 lightPos = vec3(15.0, 19.0, 15.0);
+const float EPSILON = 0.006;
 const int MAX_MAT = 10;
 
 struct Hit {
@@ -92,7 +92,6 @@ Hit mapThing1(vec3 p) {
 
 Hit mapThing2(vec3 p) {
   p += vec3(2.0, -0.59, 0.8);
-  p.xz *= rot2D(u_time * 0.6);
   float cubeD = sdfCubeRound(p, vec3(0.5), 0.13);
 
   vec3 p1 = p;
@@ -169,19 +168,48 @@ Hit raycast(vec3 ro, vec3 rd) {
   return hit;
 }
 
+// Soft shadow calculation using penumbra technique
+float calcSoftShadow(vec3 ro, vec3 rd, float mint, float maxt, float k) {
+  float res = 1.0;
+  float t = mint;
+  float ph = 1.0; // Previous step height
+
+  for(int i = 0; i < 32; i++) {
+    Hit h = map(ro + rd * t);
+    if(h.d < EPSILON) {
+      return 0.0; // Hard shadow
+    }
+
+    // Improved penumbra calculation that reduces artifacts from overlapping shadows
+    float y = h.d * h.d / (2.0 * ph);
+    float d = sqrt(h.d * h.d - y * y);
+    res = min(res, k * d / max(0.0, t - y));
+    ph = h.d;
+
+    t += h.d;
+
+    if(t >= maxt)
+      break;
+  }
+
+  return clamp(res, 0.0, 1.0);
+}
+
 void main() {
-  materials[0] = Material(vec3(0.6, 0.6, 0.6), 0.9, 0.0, 1.0, true); // Ground
-  materials[1] = Material(vec3(0.83, 0.26, 0.09), 0.8, 0.3, 6.0, false); // Greenish
-  materials[2] = Material(vec3(0.21, 0.16, 0.88), 0.8, 0.9, 64.0, false); // Bluish
+  materials[0] = Material(vec3(0.6, 0.6, 0.6), 0.99, 0.0, 1.0, true); // Ground
+  materials[1] = Material(vec3(0.83, 0.26, 0.09), 0.99, 0.3, 6.0, false); // Greenish
+  materials[2] = Material(vec3(0.21, 0.16, 0.88), 0.99, 0.9, 64.0, false); // Bluish
 
-  // Image coordinates and aspect ratio correction
+  // Initial ray setup  
+  // Image coordinates - convert from [0,1] to [-1,1] NDC space
   vec2 uv = imgCoord * 2.0 - 1.0;
-  uv.x *= u_aspect;
+  vec4 ndc = vec4(uv, 0.0, 1.0);
+  vec4 worldPos = u_inverseViewProjectionMatrix * ndc;
+  worldPos /= worldPos.w;
+  vec3 ro = u_cameraPos;
+  vec3 rd = normalize(worldPos.xyz - ro);
 
-  // Initial ray setup
-  vec3 ro = vec3(0.0, 0.9, -6);
-  vec3 rd = normalize(vec3(uv * FOV, 1.0)); // Ray direction from near to far
-
+  // Start raycasting
   Hit hit = raycast(ro, rd);
 
   vec3 col = vec3(0.0);
@@ -207,21 +235,26 @@ void main() {
       }
     }
 
+    // Add some ambient light
+    col += vec3(0.05, 0.05, 0.05);
+
+    // Soft shadow calculation
+    vec3 shadowRayDir = normalize(lightPos - p);
+    float lightDistance = length(lightPos - p);
+    float shadowFactor = calcSoftShadow(p + n * EPSILON * 4.0, shadowRayDir, 0.02, lightDistance, 8.0);
+
     // Light direction
-    vec3 lightDir = normalize(u_lightPos - p);
-    float diff = max(dot(n, lightDir), 0.0);
+    vec3 lightDir = normalize(lightPos - p);
+    float diff = max(dot(n, lightDir), 0.0) * mat.diffuse * shadowFactor;
 
     // Simple shading based on normal and light direction
-    col = mat.color * diff;
+    col += mat.color * diff;
 
     // specular highlight
     vec3 viewDir = normalize(ro - p);
     vec3 reflectDir = reflect(-lightDir, n);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), mat.hardness);
-    col += vec3(0.7) * spec * mat.specular;
-
-    // Add some ambient light
-    col += vec3(0.05, 0.03, 0.1);
+    col += vec3(0.7) * spec * mat.specular * shadowFactor;
   }
 
   pixel = vec4(col, 1.0);

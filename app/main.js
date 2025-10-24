@@ -14,6 +14,13 @@ const gl = initGL('canvas', {
   resizeCanvas: true,
 })
 
+const camera = new Camera([-1, 2, 5], [0, 0, 0], Math.PI / 4, gl.canvas.width / gl.canvas.height)
+
+// Camera orbit parameters
+const cameraRadius = 6
+const cameraHeight = 2
+const rotationSpeed = 0.3
+
 function prependSdfLib(shaderSrc) {
   return shaderSrc.replace('#include "sdf-lib.frag.glsl"', sdfLibFrag)
 }
@@ -28,6 +35,8 @@ const uniforms = {
   u_resolution: [gl.canvas.width, gl.canvas.height],
   u_aspect: gl.canvas.width / gl.canvas.height,
   u_time: 0,
+  u_inverseViewProjectionMatrix: camera.inverseViewProjectionMatrix,
+  u_cameraPos: camera.pos,
 }
 
 let progInfo
@@ -36,6 +45,18 @@ let fullScreenBuffInfo
 // Classic WebGL render loop
 function render(ts) {
   uniforms.u_time = ts * 0.001
+
+  // Update camera position to orbit around the target
+  const angle = uniforms.u_time * rotationSpeed
+  const newCameraPos = /** @type {[number, number, number]} */ ([Math.cos(angle) * cameraRadius, cameraHeight, Math.sin(angle) * cameraRadius])
+
+  // Update camera position while keeping the same target
+  camera.pos = newCameraPos
+
+  // Update uniforms with new camera data
+  uniforms.u_inverseViewProjectionMatrix = camera.inverseViewProjectionMatrix
+  uniforms.u_cameraPos = camera.pos
+
   twgl.setUniforms(progInfo, uniforms)
   twgl.drawBufferInfo(gl, fullScreenBuffInfo)
 
