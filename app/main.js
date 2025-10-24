@@ -1,6 +1,5 @@
 import vertShader from '../shaders/main.vert.glsl?raw'
 import scene1Frag from '../shaders/scene1.frag.glsl?raw'
-// import scene2Frag from '../shaders/scene2.frag.glsl?raw'
 import sdfLibFrag from '../shaders/sdf-lib.frag.glsl?raw'
 
 import * as twgl from 'twgl.js'
@@ -11,15 +10,15 @@ const gl = initGL('canvas', {
   width: 640,
   height: 480,
   fitToContainer: true,
-  resizeCanvas: true,
+  resizeCanvas: false,
 })
 
 const camera = new Camera([-1, 2, 5], [0, 0, 0], Math.PI / 4, gl.canvas.width / gl.canvas.height)
 
 // Camera orbit parameters
 const cameraRadius = 6
-const cameraHeight = 2
-const rotationSpeed = 0.3
+const cameraHeight = 3
+const rotationSpeed = 0.4
 
 function prependSdfLib(shaderSrc) {
   return shaderSrc.replace('#include "sdf-lib.frag.glsl"', sdfLibFrag)
