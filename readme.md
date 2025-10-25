@@ -2,7 +2,7 @@
 
 Experiments with [ray marching](https://en.wikipedia.org/wiki/Ray_marching) and signed distance functions (SDF) in WebGL.
 
-![Static Badge](https://img.shields.io/badge/TRY%20IT%20ONLINE!-20B2AA?style=for-the-badge&logo=webgl&logoColor=white&link=https://raymarch.benc.dev/)
+[![Static Badge](https://img.shields.io/badge/TRY%20IT%20ONLINE!-20B2AA?style=for-the-badge&logo=open3d&logoColor=white&color=209955)](http://raymarch.benc.dev/)
 
 ## Tech
 
