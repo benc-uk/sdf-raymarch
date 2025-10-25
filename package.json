@@ -7,6 +7,7 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
+    "preview": "vite build && vite preview",
     "build": "vite build",
     "serve": "vite preview",
     "lint": "eslint . --config .dev/eslint.config.mjs && npm run format:check",

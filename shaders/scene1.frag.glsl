@@ -1,6 +1,8 @@
 #version 300 es 
 precision highp float;
 
+#include sdflib
+
 in vec2 imgCoord;
 out vec4 pixel;
 
@@ -8,91 +10,16 @@ uniform float u_time;
 uniform vec3 u_cameraPos;
 uniform mat4 u_inverseViewProjectionMatrix;
 
-const vec3 lightPos = vec3(15.0, 19.0, 15.0);
 const float EPSILON = 0.006;
-const int MAX_MAT = 10;
+const Light LIGHTS[2] = Light[](Light(vec3(5.0, 8.0, 5.0), vec3(1.0, 0.95, 0.9)), Light(vec3(-4.0, 6.0, -3.0), vec3(0.84, 0.53, 0.25)));
+const Material MATERIALS[5] = Material[](Material(vec3(0.6, 0.6, 0.6), 1.0, 0.0, 1.0, true, true),      // Ground
+Material(vec3(0.83, 0.26, 0.09), 1.0, 0.3, 6.0, false, true),  // Redish
+Material(vec3(0.21, 0.16, 0.88), 1.0, 0.9, 64.0, false, false),// Bluish
+Material(vec3(0.1, 0.8, 0.1), 1.0, 1.0, 3.0, false, true),     // Shiny green
+Material(vec3(0.19, 0.27, 0.37), 1.0, 0.1, 1.0, false, false)  // Grey
+);
 
-struct Hit {
-  float d;
-  int matID;
-};
-
-struct Material {
-  vec3 color;
-  float diffuse;
-  float specular;
-  float hardness;
-  bool isChecker;
-};
-
-Material materials[MAX_MAT];
-
-float sdfSphere(vec3 p, float s) {
-  return length(p) - s;
-}
-
-float sdfCube(vec3 p, vec3 b) {
-  vec3 q = abs(p) - b;
-  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
-}
-
-float sdfCylinder(vec3 p, vec2 h) {
-  vec2 d = abs(vec2(length(p.xz), p.y)) - h;
-  return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
-}
-
-float sdfCubeRound(vec3 p, vec3 b, float r) {
-  vec3 q = abs(p) - b;
-  return length(max(q, 0.0)) - r + min(max(q.x, max(q.y, q.z)), 0.0);
-}
-
-float sdfBoxFrame(vec3 p, vec3 b, float e) {
-  p = abs(p) - b;
-  vec3 q = abs(p + e) - e;
-  return min(min(length(max(vec3(p.x, q.y, q.z), 0.0)) + min(max(p.x, max(q.y, q.z)), 0.0), length(max(vec3(q.x, p.y, q.z), 0.0)) + min(max(q.x, max(p.y, q.z)), 0.0)), length(max(vec3(q.x, q.y, p.z), 0.0)) + min(max(q.x, max(q.y, p.z)), 0.0));
-}
-
-float sdfTorus(vec3 p, vec2 t) {
-  vec2 q = vec2(length(p.xz) - t.x, p.y);
-  return length(q) - t.y;
-}
-
-float sdfOctahedron(vec3 p, float s) {
-  p = abs(p);
-  float m = p.x + p.y + p.z - s;
-  vec3 q;
-  if(3.0 * p.x < m)
-    q = p.xyz;
-  else if(3.0 * p.y < m)
-    q = p.yzx;
-  else if(3.0 * p.z < m)
-    q = p.zxy;
-  else
-    return m * 0.57735027;
-  float k = clamp(0.5 * (q.z - q.y + s), 0.0, s);
-  return length(vec3(q.x, q.y - s + k, q.z - k));
-}
-
-float opUnionSm(float a, float b, float k) {
-  float h = max(k - abs(a - b), 0.0) / k;
-  return min(a, b) - h * h * k * 0.25;
-}
-
-float opSubSm(float d1, float d2, float k) {
-  return -opUnionSm(-d2, d1, k);
-}
-
-float opSub(float d1, float d2) {
-  return max(-d1, d2);
-}
-
-mat2 rot2D(float angle) {
-  float c = cos(angle);
-  float s = sin(angle);
-  return mat2(c, -s, s, c);
-}
-
-float mapThing1(vec3 p) {
+float mapBlobber(vec3 p) {
   vec3 p1 = p;
   p1.y -= 0.15;
   float torusD = sdfTorus(p1, vec2(0.9, 0.3));
@@ -104,7 +31,7 @@ float mapThing1(vec3 p) {
   return opUnionSm(sphereD, torusD, 0.5);
 }
 
-float mapThing2(vec3 p) {
+float mapCubeThing(vec3 p) {
   p += vec3(2.0, -0.59, 0.8);
   float cubeD = sdfCubeRound(p, vec3(0.5), 0.13);
 
@@ -126,29 +53,31 @@ float mapThing2(vec3 p) {
   return opUnionSm(cubeD, cylD, 0.3);
 }
 
-float mapThing3(vec3 p) {
-  // add a green frame
+float mapCrystal(vec3 p) {
+  p += vec3(-2.4, -1.5, 1.0);
+  p.xz *= rot2D(u_time);
+  vec3 p1 = p;
+  p1.xz *= rot2D(0.7);
+  float octD = sdfOctahedron(p, 0.6);
+  float octD2 = sdfOctahedron(p1, 0.6);
+  octD = opUnionSm(octD, octD2, 0.2);
+
+  return octD;
+}
+
+float mapFrame(vec3 p) {
   p += vec3(-2.4, 0.0, 1.0);
   float frameD = sdfBoxFrame(p, vec3(1.0, 1.0, 1.0), 0.1);
 
-  // spinning octahedron inside the frame
-  vec3 p1 = p;
-  p1 += vec3(0.0, -1.0, 0.0);
-  p1.xz *= rot2D(u_time);
-  vec3 p2 = p1;
-  p2.xz *= rot2D(0.7);
-  float octD = sdfOctahedron(p1, 0.6);
-  float octD2 = sdfOctahedron(p2, 0.6);
-  octD = opUnionSm(octD, octD2, 0.2);
-
-  return min(frameD, octD);
+  return frameD;
 }
 
 // Combined mapping for normal calculation (used only when we know we hit an object)
 Hit map(vec3 p) {
-  float d1 = mapThing1(p);
-  float d2 = mapThing2(p);
-  float d3 = mapThing3(p);
+  float d1 = mapBlobber(p);
+  float d2 = mapCubeThing(p);
+  float d3 = mapCrystal(p);
+  float d4 = mapFrame(p);
 
   float minD = d1;
   int matID = 1;
@@ -160,6 +89,10 @@ Hit map(vec3 p) {
   if(d3 < minD) {
     minD = d3;
     matID = 3;
+  }
+  if(d4 < minD) {
+    minD = d4;
+    matID = 4;
   }
 
   return Hit(minD, matID);
@@ -215,7 +148,7 @@ float calcSoftShadow(vec3 ro, vec3 rd, float mint, float maxt, float k) {
   float t = mint;
   float ph = 1.0; // Previous step height
 
-  for(int i = 0; i < 32; i++) {
+  for(int i = 0; i < 64; i++) {
     Hit h = map(ro + rd * t);
     if(h.d < EPSILON) {
       return 0.0; // Hard shadow
@@ -237,11 +170,6 @@ float calcSoftShadow(vec3 ro, vec3 rd, float mint, float maxt, float k) {
 }
 
 void main() {
-  materials[0] = Material(vec3(0.6, 0.6, 0.6), 0.99, 0.0, 1.0, true); // Ground
-  materials[1] = Material(vec3(0.83, 0.26, 0.09), 0.99, 0.3, 6.0, false); // Greenish
-  materials[2] = Material(vec3(0.21, 0.16, 0.88), 0.99, 0.9, 64.0, false); // Bluish
-  materials[3] = Material(vec3(0.1, 0.8, 0.1), 0.99, 1.0, 3.0, false); // Frame green
-
   // Initial ray setup  
   // Image coordinates - convert from [0,1] to [-1,1] NDC space
   vec2 uv = imgCoord * 2.0 - 1.0;
@@ -259,24 +187,22 @@ void main() {
 
   if(hit.matID != -1) {
     vec3 n;
-    bool reflective = false;
-    Material mat = materials[hit.matID];
+    Material mat = MATERIALS[hit.matID];
 
     // Check if ground or regular object
     if(hit.matID == 0) {
       n = vec3(0.0, 1.0, 0.0);
-      reflective = true;
     } else {
       n = getNormal(p);
     }
 
     if(mat.isChecker) {
-      float checkerSize = 0.8;
+      float checkerSize = 1.3;
 
       // Distance-based filtering to reduce aliasing
       float distance = hit.d;
       float fadeDistance = 0.0; // Distance at which checker starts fading
-      float maxDistance = 30.0;  // Distance at which checker completely disappears
+      float maxDistance = 60.0;  // Distance at which checker completely disappears
 
       // Calculate fade factor based on distance
       float fadeFactor = 1.0 - smoothstep(fadeDistance, maxDistance, distance);
@@ -300,34 +226,37 @@ void main() {
     col += vec3(0.09, 0.08, 0.08);
 
     // Soft shadow calculation
-    vec3 shadowRayDir = normalize(lightPos - p);
-    float lightDistance = length(lightPos - p);
-    float shadowFactor = calcSoftShadow(p + n * EPSILON * 4.0, shadowRayDir, 0.02, lightDistance, 6.0);
+    for(int i = 0; i < LIGHTS.length(); i++) {
+      vec3 lightPos = LIGHTS[i].position;
+      vec3 lightCol = LIGHTS[i].color;
+      vec3 shadowRayDir = normalize(lightPos - p);
+      float lightDistance = length(lightPos - p);
+      float shadowFactor = calcSoftShadow(p + n * EPSILON * 4.0, shadowRayDir, 0.02, lightDistance, 6.0);
 
-    // Light direction
-    vec3 lightDir = normalize(lightPos - p);
-    float diff = max(dot(n, lightDir), 0.0) * mat.diffuse * shadowFactor;
+      // Light direction
+      vec3 lightDir = normalize(lightPos - p);
+      float diff = max(dot(n, lightDir), 0.0) * mat.diffuse * shadowFactor;
 
-    // Simple shading based on normal and light direction
-    col += mat.color * diff;
+      // Simple shading based on normal and light direction
+      col += mat.color * diff * lightCol;
 
-    // specular highlight
-    vec3 viewDir = normalize(ro - p);
-    vec3 reflectDir = reflect(-lightDir, n);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), mat.hardness);
-    col += vec3(1.0) * spec * mat.specular * shadowFactor;
+      // specular highlight
+      vec3 viewDir = normalize(ro - p);
+      vec3 reflectDir = reflect(-lightDir, n);
+      float spec = pow(max(dot(viewDir, reflectDir), 0.0), mat.hardness);
+      col += vec3(1.0) * spec * mat.specular * shadowFactor * lightCol;
 
-    // reflections for the ground plane
-    if(reflective) {
-      vec3 reflectDir = reflect(rd, n);
-      Hit reflectHit = raycast(p + n * EPSILON * 4.0, reflectDir);
-      if(reflectHit.matID != -1) {
-        vec3 reflectP = p + reflectDir * reflectHit.d;
-        vec3 reflectN = getNormal(reflectP);
-        Material reflectMat = materials[reflectHit.matID];
-        float reflectDiff = max(dot(reflectN, lightDir), 0.0) * reflectMat.diffuse;
-        vec3 reflectCol = reflectMat.color * reflectDiff;
-        col += reflectCol * 0.5; // reflection intensity
+      if(mat.isReflective) {
+        vec3 reflectDir = reflect(rd, n);
+        Hit reflectHit = raycast(p + n * EPSILON * 10.0, reflectDir);
+        if(reflectHit.matID != -1) {
+          vec3 reflectP = p + reflectDir * reflectHit.d;
+          vec3 reflectN = getNormal(reflectP);
+          Material reflectMat = MATERIALS[reflectHit.matID];
+          float reflectDiff = max(dot(reflectN, lightDir), 0.0) * reflectMat.diffuse;
+          vec3 reflectCol = reflectMat.color * reflectDiff;
+          col += reflectCol * 0.3;
+        }
       }
     }
   }

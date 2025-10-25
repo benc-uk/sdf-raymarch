@@ -15,6 +15,8 @@ let gl
  * @property {boolean} [pixelRendering=false] - Whether to disable smoothing (useful for pixel art).
  * @property {string} [backgroundColor='#000'] - Background color in CSS color string format.
  * @property {Object} [glOptions={}] - Additional WebGL context options.
+ * @property {boolean} [showFPS=false] - Whether to display an FPS counter overlay.
+ * @property {number} [fpsUpdateInterval=2000] - Interval in milliseconds for updating the FPS display.
  */
 
 /** @type {InitGLOptions} */
@@ -26,7 +28,18 @@ const defaults = {
   pixelRendering: false,
   backgroundColor: '#000',
   glOptions: {},
+  showFPS: false,
+  fpsUpdateInterval: 2000,
 }
+
+// --------------------------------------------------------------------------------------------
+// Optional FPS Meter state
+// --------------------------------------------------------------------------------------------
+let fpsEnabled = false
+let fpsDiv = null
+let fpsFrameCount = 0
+let fpsLastUpdate = 0
+let fpsInterval = 2000
 
 /**
  * Initializes the WebGL context with the given canvas selector and options.
@@ -88,6 +101,27 @@ export function initGL(selector = 'canvas', options = defaults) {
   }
 
   console.log(`Initialized WebGL context: ${canvas.width}x${canvas.height}`)
+
+  // Setup FPS overlay if requested
+  if (options.showFPS) {
+    fpsEnabled = true
+    fpsInterval = options.fpsUpdateInterval || 2000
+    fpsDiv = document.createElement('div')
+    fpsDiv.textContent = '... FPS'
+    fpsDiv.style.position = 'fixed'
+    fpsDiv.style.top = '4px'
+    fpsDiv.style.right = '8px'
+    fpsDiv.style.zIndex = '1000'
+    fpsDiv.style.padding = '4px 12px'
+    fpsDiv.style.background = 'rgba(0,0,0,0.4)'
+    fpsDiv.style.color = '#0f0'
+    fpsDiv.style.borderRadius = '6px'
+    fpsDiv.style.font = '16px monospace'
+    fpsDiv.style.pointerEvents = 'none'
+    fpsDiv.style.userSelect = 'none'
+    document.body.appendChild(fpsDiv)
+  }
+
   return gl
 }
 
@@ -139,4 +173,24 @@ function fit(canvas) {
   canvas.style.margin = 'auto'
 
   return [displayWidth, displayHeight]
+}
+
+// --------------------------------------------------------------------------------------------
+// Frame update hook (call once per rendered frame, pass in the rAF timestamp)
+// --------------------------------------------------------------------------------------------
+/**
+ * Update per-frame stats (currently only FPS). Safe to call even if disabled.
+ * @param {number} [ts=performance.now()] - The high-resolution timestamp (from requestAnimationFrame).
+ */
+export function glFrameUpdate(ts = performance.now()) {
+  if (!fpsEnabled) return
+  fpsFrameCount++
+  if (fpsLastUpdate === 0) fpsLastUpdate = ts
+  const elapsed = ts - fpsLastUpdate
+  if (elapsed >= fpsInterval) {
+    const fps = (fpsFrameCount / elapsed) * 1000
+    if (fpsDiv) fpsDiv.textContent = fps.toFixed(1) + ' FPS'
+    fpsFrameCount = 0
+    fpsLastUpdate = ts
+  }
 }

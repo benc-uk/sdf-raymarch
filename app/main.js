@@ -3,14 +3,15 @@ import scene1Frag from '../shaders/scene1.frag.glsl?raw'
 import sdfLibFrag from '../shaders/sdf-lib.frag.glsl?raw'
 
 import * as twgl from 'twgl.js'
-import { initGL } from './gl.js'
+import { glFrameUpdate, initGL } from './gl.js'
 import { Camera } from './camera.js'
 
 const gl = initGL('canvas', {
-  width: 1024,
-  height: 768,
+  width: 800,
+  height: 600,
   fitToContainer: true,
   resizeCanvas: false,
+  showFPS: true,
 })
 
 const camera = new Camera([-1, 2, 5], [0, 0, 0], Math.PI / 4, gl.canvas.width / gl.canvas.height)
@@ -20,8 +21,12 @@ const cameraRadius = 6
 const cameraHeight = 3
 const rotationSpeed = 0.4
 
+let timeoutId = null
+const canvas = /** @type {HTMLCanvasElement} */ (document.querySelector('canvas'))
+const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('select'))
+
 function prependSdfLib(shaderSrc) {
-  return shaderSrc.replace('#include "sdf-lib.frag.glsl"', sdfLibFrag)
+  return shaderSrc.replace('#include sdflib', sdfLibFrag)
 }
 
 const sceneMap = {
@@ -59,6 +64,7 @@ function render(ts) {
   twgl.setUniforms(progInfo, uniforms)
   twgl.drawBufferInfo(gl, fullScreenBuffInfo)
 
+  glFrameUpdate(ts)
   requestAnimationFrame(render)
 }
 
@@ -75,11 +81,28 @@ function switchScene(sceneName) {
   twgl.setBuffersAndAttributes(gl, progInfo, fullScreenBuffInfo)
 }
 
-document.querySelector('select').addEventListener('change', (e) => {
+sceneSelector.addEventListener('change', (e) => {
   //@ts-ignore
   const scene = e.target.value
   console.log(`Switching to scene: ${scene}`)
   switchScene(scene)
+})
+
+canvas.addEventListener('mousemove', () => {
+  sceneSelector.classList.remove('hidden')
+  sceneSelector.classList.add('visible')
+
+  if (timeoutId) clearTimeout(timeoutId)
+
+  timeoutId = setTimeout(() => {
+    sceneSelector.classList.remove('visible')
+    sceneSelector.classList.add('hidden')
+  }, 3000)
+})
+
+canvas.addEventListener('mouseleave', () => {
+  sceneSelector.classList.remove('visible')
+  sceneSelector.classList.add('hidden')
 })
 
 switchScene('scene1')
