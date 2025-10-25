@@ -92,7 +92,7 @@ mat2 rot2D(float angle) {
   return mat2(c, -s, s, c);
 }
 
-Hit mapThing1(vec3 p) {
+float mapThing1(vec3 p) {
   vec3 p1 = p;
   p1.y -= 0.15;
   float torusD = sdfTorus(p1, vec2(0.9, 0.3));
@@ -101,12 +101,10 @@ Hit mapThing1(vec3 p) {
   p2.y -= sin(u_time * 2.5) * 0.7 + 1.2;
   float sphereD = sdfSphere(p2, 0.7);
 
-  float d = opUnionSm(sphereD, torusD, 0.5);
-
-  return Hit(d, 1);
+  return opUnionSm(sphereD, torusD, 0.5);
 }
 
-Hit mapThing2(vec3 p) {
+float mapThing2(vec3 p) {
   p += vec3(2.0, -0.59, 0.8);
   float cubeD = sdfCubeRound(p, vec3(0.5), 0.13);
 
@@ -125,10 +123,10 @@ Hit mapThing2(vec3 p) {
   cubeD = opSub(sdfSphere(hole3Pos, holeRadius), cubeD);
   cubeD = opSub(sdfSphere(hole4Pos, holeRadius), cubeD);
 
-  return Hit(opUnionSm(cubeD, cylD, 0.3), 2);
+  return opUnionSm(cubeD, cylD, 0.3);
 }
 
-Hit mapThing3(vec3 p) {
+float mapThing3(vec3 p) {
   // add a green frame
   p += vec3(-2.4, 0.0, 1.0);
   float frameD = sdfBoxFrame(p, vec3(1.0, 1.0, 1.0), 0.1);
@@ -143,22 +141,28 @@ Hit mapThing3(vec3 p) {
   float octD2 = sdfOctahedron(p2, 0.6);
   octD = opUnionSm(octD, octD2, 0.2);
 
-  return Hit(min(frameD, octD), 3);
+  return min(frameD, octD);
 }
 
 // Combined mapping for normal calculation (used only when we know we hit an object)
 Hit map(vec3 p) {
-  Hit hit1 = mapThing1(p);
-  Hit hit2 = mapThing2(p);
-  Hit hit3 = mapThing3(p);
+  float d1 = mapThing1(p);
+  float d2 = mapThing2(p);
+  float d3 = mapThing3(p);
 
-  if(hit1.d < hit2.d && hit1.d < hit3.d) {
-    return hit1;
-  } else if(hit2.d < hit3.d) {
-    return hit2;
-  } else {
-    return hit3;
+  float minD = d1;
+  int matID = 1;
+
+  if(d2 < minD) {
+    minD = d2;
+    matID = 2;
   }
+  if(d3 < minD) {
+    minD = d3;
+    matID = 3;
+  }
+
+  return Hit(minD, matID);
 }
 
 vec3 getNormal(vec3 p) {
@@ -255,16 +259,16 @@ void main() {
 
   if(hit.matID != -1) {
     vec3 n;
-
     bool reflective = false;
+    Material mat = materials[hit.matID];
+
+    // Check if ground or regular object
     if(hit.matID == 0) {
       n = vec3(0.0, 1.0, 0.0);
       reflective = true;
     } else {
       n = getNormal(p);
     }
-
-    Material mat = materials[hit.matID];
 
     if(mat.isChecker) {
       float checkerSize = 0.8;

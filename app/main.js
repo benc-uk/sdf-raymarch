@@ -7,8 +7,8 @@ import { initGL } from './gl.js'
 import { Camera } from './camera.js'
 
 const gl = initGL('canvas', {
-  width: 640,
-  height: 480,
+  width: 1024,
+  height: 768,
   fitToContainer: true,
   resizeCanvas: false,
 })
