@@ -13,7 +13,7 @@ const gl = initGL('canvas', {
   width: 800,
   height: 600,
   fitToContainer: true,
-  resizeCanvas: true,
+  resizeCanvas: false,
   showFPS: true,
 })
 
