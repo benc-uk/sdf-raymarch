@@ -4,6 +4,8 @@ Experiments with [ray marching](https://en.wikipedia.org/wiki/Ray_marching) and 
 
 [![Static Badge](https://img.shields.io/badge/LIVE%20VERSION!-20B2AA?style=for-the-badge&logo=open3d&logoColor=white&color=209955)](http://raymarch.benc.dev/)
 
+![](./public/img/screen_01.png)
+
 ## Tech
 
 - WebGL2 via [twgl.js](www.twgljs.org)
@@ -13,7 +15,7 @@ Experiments with [ray marching](https://en.wikipedia.org/wiki/Ray_marching) and 
 
 ## Minimal Example
 
-A minimal single page GPU ray marcher in [100 lines of code](./public/mini/index.html).
+A super minimal single page GPU ray marcher in [100 lines of code](./public/mini-comments/index.html).
 
 ### Links
 

@@ -1,0 +1,176 @@
+<html lang="en">
+  <head>
+    <title>Single Page GPU SDF Ray Marcher - Ben Coleman</title>
+  </head>
+  <body style="margin: 0">
+    <canvas style="width: 100%" width="640" height="480"></canvas>
+
+    <script id="vs" type="x-shader/x-vertex">
+      #version 300 es
+      // Very simple vertex shader that just passes through position
+      // This is boilerplate for a full-screen quad where the fragment shader does all the work
+      in vec4 position;
+      void main() { gl_Position = position; }
+    </script>
+
+    <script id="fs" type="x-shader/x-fragment">
+      #version 300 es
+      precision highp float;
+
+      // Uniforms are variables passed in from JS code
+      uniform vec2 u_resolution;
+      uniform float u_time;
+
+      // Our final output color from the fragment shader
+      out vec4 fragColor;
+
+      // SDF helper functions for 3D primitives
+      // See https://iquilezles.org/articles/distfunctions/
+      float sdfSphere(vec3 p, float s) {
+        return length(p) - s;
+      }
+
+      float sdfCube(vec3 p, float s) {
+        vec3 d = abs(p) - vec3(s);
+        return min(max(d.x, max(d.y,d.z)), 0.0) + length(max(d, 0.0));
+      }
+
+      float smoothMin(float a, float b, float k) {
+        float h = max(k - abs(a - b), 0.0) / k;
+        return min(a, b) - h * h * k * 0.25;
+      }
+
+      // This calculates the distance to the closest object in the scene
+      // It combines multiple SDFs using smooth min to blend them together
+      // If we used just min() we'd get sharp edges where they meet
+      float map(vec3 p) {
+        // What are we doing here?
+        // Copying input p to to allow us to modify & transform it for multiple objects
+        vec3 p1 = p;
+        vec3 p2 = p;
+
+        // Animate the positions of the spheres over time by modifying p1 and p2
+        p1.x += sin(u_time * 1.85) * 1.3;
+        p2.y += cos(u_time * 1.33) * 1.2;
+
+        // Use mutated positions p1 & p2 to calculate distances to spheres
+        float d1 = sdfSphere(p1 - vec3(-1.0, 0.0, 0.0), 1.0);
+        float d2 = sdfSphere(p2 - vec3(1.0, 0.0, 0.0), 1.3);
+        // Cube doesn't move, so we use original p
+        float d3 = sdfCube(p - vec3(0.0, -1.2, -0.2), 0.7);
+
+        // This is the key part - combine the distances using smooth min
+        // 0.8 is the smoothing factor - higher = smoother & more gloopy
+        return smoothMin(smoothMin(d1, d2, 0.5), d3, 0.8);
+      }
+
+      // Ray marching function to find intersection with scene for a ray
+      // This is the core of rendering process which repeatedly steps along the ray
+      // We return a tuple pair where x = distance along ray to hit (also called 't')
+      //  - and: y = 1.0 if hit, 0.0 if miss
+      vec2 marchRay(vec3 ro, vec3 rd) {
+        float t = 0.0;
+
+        for (int i = 0; i < 40; i++) {
+          float d = map(ro + rd * t);
+          if (d < 0.0001) { return vec2(t, 1.0); } // hit
+          t += d;
+          if (t > 5.0) break;
+        }
+
+        return vec2(0.0, 0.0); // miss
+      }
+
+      // This is some hardcore magic, very clever people figured this out
+      // See: https://iquilezles.org/articles/normalsSDF/
+      vec3 normal(vec3 p) {
+        vec2 k = vec2(1.0, -1.0) * 0.5773 * 0.0005;
+
+        return normalize(k.xyy * map(p + k.xyy) +
+          k.yyx * map(p + k.yyx) +
+          k.yxy * map(p + k.yxy) +
+          k.xxx * map(p + k.xxx));
+      }
+
+
+      // OK now we get to the main function that runs for every pixel
+      void main() {
+        // Colour of our objects
+        const vec3 objCol = vec3(1.0, 0.45, 0.3);
+
+        // Normalized pixel coordinates (from -1 to 1)
+        vec2 uv = (2.0 * gl_FragCoord.xy - u_resolution.xy) / u_resolution.y;
+
+        // Single light source, for simple lighting
+        vec3 lightDir = normalize(vec3(-2.0, 3.0, 1.5));
+
+        // Ray origin and direction
+        vec3 ro = vec3(0.0, 0.0, 5.0);
+        vec3 rd = normalize(vec3(uv, -1.8));
+
+        // March the ray through the scene
+        vec2 hit = marchRay(ro, rd);
+
+        // Background color
+        vec3 col = vec3(0.2, 0.22, 0.3);
+
+        // If we hit something, calculate lighting
+        if(hit.y != 0.0) {
+          vec3 n = normal(ro + rd * hit.x);
+          // Diffuse and specular lighting, using classic Blin-Phong model
+          float diff = max(dot(lightDir, n), 0.0);
+          float spec = pow(max(dot(reflect(-lightDir, n), -rd), 0.0), 26.0);
+          // Final color is object color modulated by lighting
+          col = objCol * (diff + spec*1.8);
+        }
+
+        // Output to screen
+        fragColor = vec4(col, 1.0);
+      }
+    </script>
+
+    <!-- Set up WebGL and render the scene, almost entirely boilerplate / generic code -->
+    <!-- All the work is done in the fragment shader, everything else is a means to that -->
+    <script type="module">
+      // Import TWGL to make WebGL easier!
+      // See: https://twgljs.org/
+      import * as twgl from 'https://esm.sh/twgl.js'
+
+      // Get WebGL2 context & compile our shaders
+      const gl = document.querySelector('canvas').getContext('webgl2')
+      const progInfo = twgl.createProgramInfo(gl, ['vs', 'fs'])
+
+      // General GL setup
+      gl.useProgram(progInfo.program)
+      twgl.resizeCanvasToDisplaySize(gl.canvas)
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+
+      // Create a buffer for a full-screen quad
+      // This is a special cheat, we just need a single rectangle that fills the screen
+      const bufferInfo = twgl.createBufferInfoFromArrays(gl, {
+        position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
+      })
+
+      // Tell WebGL about our quad buffer
+      twgl.setBuffersAndAttributes(gl, progInfo, bufferInfo)
+
+      // A minimal but very normal WebGL render loop
+      function render(time) {
+        // Set the uniforms for this frame
+        twgl.setUniforms(progInfo, {
+          u_time: time * 0.001,
+          u_resolution: [gl.canvas.width, gl.canvas.height],
+        })
+
+        // Oh so here is the actual call to "draw my shit"
+        twgl.drawBufferInfo(gl, bufferInfo)
+
+        // Loop forever
+        requestAnimationFrame(render)
+      }
+
+      // Start the render loop, IT ALL BEGINS HERE
+      requestAnimationFrame(render)
+    </script>
+  </body>
+</html>

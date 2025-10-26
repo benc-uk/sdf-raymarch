@@ -1,6 +1,9 @@
 // ============================================================================================
 // WebGL Mini Library
+// (C) Ben Coleman 2025
+// License: MIT (see LICENSE file)
 // This module provides a mid-level interface for initializing and managing a WebGL2 context
+// Plus optional FPS overlay functionality.
 // ============================================================================================
 
 /** @type {WebGL2RenderingContext} */
@@ -109,12 +112,12 @@ export function initGL(selector = 'canvas', options = defaults) {
     fpsDiv = document.createElement('div')
     fpsDiv.textContent = '... FPS'
     fpsDiv.style.position = 'fixed'
-    fpsDiv.style.top = '4px'
+    fpsDiv.style.top = '8px'
     fpsDiv.style.right = '8px'
     fpsDiv.style.zIndex = '1000'
     fpsDiv.style.padding = '4px 12px'
     fpsDiv.style.background = 'rgba(0,0,0,0.4)'
-    fpsDiv.style.color = '#0f0'
+    fpsDiv.style.color = 'rgba(236, 236, 236, 1)'
     fpsDiv.style.borderRadius = '6px'
     fpsDiv.style.font = '16px monospace'
     fpsDiv.style.pointerEvents = 'none'
@@ -175,17 +178,17 @@ function fit(canvas) {
   return [displayWidth, displayHeight]
 }
 
-// --------------------------------------------------------------------------------------------
-// Frame update hook (call once per rendered frame, pass in the rAF timestamp)
-// --------------------------------------------------------------------------------------------
 /**
  * Update per-frame stats (currently only FPS). Safe to call even if disabled.
  * @param {number} [ts=performance.now()] - The high-resolution timestamp (from requestAnimationFrame).
  */
-export function glFrameUpdate(ts = performance.now()) {
+export function glUpdateStats(ts = performance.now()) {
   if (!fpsEnabled) return
+
   fpsFrameCount++
+
   if (fpsLastUpdate === 0) fpsLastUpdate = ts
+
   const elapsed = ts - fpsLastUpdate
   if (elapsed >= fpsInterval) {
     const fps = (fpsFrameCount / elapsed) * 1000
