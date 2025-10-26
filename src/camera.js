@@ -1,6 +1,8 @@
 // ==========================================================================
 // Camera class
-// Handles position, orientation, and movement based on user controls
+// (C) Ben Coleman 2025
+// License: MIT (see LICENSE file)
+// Simple camera implementation for WebGL applications
 // ==========================================================================
 
 import * as twgl from 'twgl.js'

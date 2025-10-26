@@ -12,7 +12,8 @@
     "serve": "vite  --config .dev/vite.config.js preview",
     "lint": "eslint . --config .dev/eslint.config.mjs && npm run format:check",
     "format": "prettier --config .dev/.prettierrc --write .",
-    "format:check": "prettier --config .dev/.prettierrc --check ."
+    "format:check": "prettier --config .dev/.prettierrc --check .",
+    "clean": "rm -rf dist .vite"
   },
   "dependencies": {
     "twgl.js": "^7.0.0"
