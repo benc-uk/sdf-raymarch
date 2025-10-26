@@ -83,7 +83,7 @@ export function switchScene(sceneName) {
 
 // Fake shader preprocessor to prepend sdf library code
 function prependSdfLib(shaderSrc) {
-  return shaderSrc.replace('#include sdflib', sdfLibFrag)
+  return shaderSrc.replace('//#include sdflib', sdfLibFrag)
 }
 
 // Classic WebGL render loop
@@ -92,7 +92,8 @@ function render(ts) {
 
   // Update camera position to orbit around the target
   const angle = uniforms.u_time * rotationSpeed
-  const newCameraPos = /** @type {[number, number, number]} */ ([Math.cos(angle) * cameraRadius, cameraHeight, Math.sin(angle) * cameraRadius])
+  const height = cameraHeight + Math.sin(uniforms.u_time * 0.3) * 0.8
+  const newCameraPos = /** @type {[number, number, number]} */ ([Math.cos(angle) * cameraRadius, height, Math.sin(angle) * cameraRadius])
 
   // Update camera position while keeping the same target
   camera.pos = newCameraPos

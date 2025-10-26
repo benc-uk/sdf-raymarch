@@ -1,7 +1,94 @@
 #version 300 es 
 precision highp float;
 
-#include sdflib
+//zzzz#include sdflib
+struct Hit {
+  float d;
+  int matID;
+};
+
+struct Material {
+  vec3 color;
+  float diffuse;
+  float specular;
+  float hardness;
+  bool isChecker;
+  bool isReflective;
+};
+
+struct Light {
+  vec3 position;
+  vec3 color;
+};
+
+float sdfPlane(vec3 p, vec3 n, float h) {
+  return dot(p, n) + h; // n must be normalized
+}
+
+float sdfSphere(vec3 p, float s) {
+  return length(p) - s;
+}
+
+float sdfCube(vec3 p, vec3 b) {
+  vec3 q = abs(p) - b;
+  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float sdfCylinder(vec3 p, vec2 h) {
+  vec2 d = abs(vec2(length(p.xz), p.y)) - h;
+  return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+}
+
+float sdfCubeRound(vec3 p, vec3 b, float r) {
+  vec3 q = abs(p) - b;
+  return length(max(q, 0.0)) - r + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float sdfBoxFrame(vec3 p, vec3 b, float e) {
+  p = abs(p) - b;
+  vec3 q = abs(p + e) - e;
+  return min(min(length(max(vec3(p.x, q.y, q.z), 0.0)) + min(max(p.x, max(q.y, q.z)), 0.0), length(max(vec3(q.x, p.y, q.z), 0.0)) + min(max(q.x, max(p.y, q.z)), 0.0)), length(max(vec3(q.x, q.y, p.z), 0.0)) + min(max(q.x, max(q.y, p.z)), 0.0));
+}
+
+float sdfTorus(vec3 p, vec2 t) {
+  vec2 q = vec2(length(p.xz) - t.x, p.y);
+  return length(q) - t.y;
+}
+
+float sdfOctahedron(vec3 p, float s) {
+  p = abs(p);
+  float m = p.x + p.y + p.z - s;
+  vec3 q;
+  if(3.0 * p.x < m)
+    q = p.xyz;
+  else if(3.0 * p.y < m)
+    q = p.yzx;
+  else if(3.0 * p.z < m)
+    q = p.zxy;
+  else
+    return m * 0.57735027;
+  float k = clamp(0.5 * (q.z - q.y + s), 0.0, s);
+  return length(vec3(q.x, q.y - s + k, q.z - k));
+}
+
+float opUnionSm(float d1, float d2, float k) {
+  float h = max(k - abs(d1 - d2), 0.0) / k;
+  return min(d1, d2) - h * h * k * 0.25;
+}
+
+float opSubSm(float d1, float d2, float k) {
+  return -opUnionSm(-d2, d1, k);
+}
+
+float opSub(float d1, float d2) {
+  return max(-d1, d2);
+}
+
+mat2 rot2D(float angle) {
+  float c = cos(angle);
+  float s = sin(angle);
+  return mat2(c, -s, s, c);
+}
 
 in vec2 imgCoord;
 out vec4 pixel;
@@ -11,6 +98,10 @@ uniform vec3 u_cameraPos;
 uniform mat4 u_inverseViewProjectionMatrix;
 
 const float EPSILON = 0.006;
+const int MAX_MARCHING_STEPS = 128;
+const float MAX_VIEW_DISTANCE = 25.0;
+const float CHECK_SIZE = 1.3;
+
 const Light LIGHTS[2] = Light[](Light(vec3(5.0, 8.0, 5.0), vec3(1.0, 0.95, 0.9)), Light(vec3(-4.0, 6.0, -3.0), vec3(0.84, 0.53, 0.25)));
 const Material MATERIALS[5] = Material[](Material(vec3(0.6, 0.6, 0.6), 1.0, 0.0, 1.0, true, true),      // Ground is grey
 Material(vec3(0.83, 0.26, 0.09), 1.0, 0.3, 6.0, false, true),  // Reddish
@@ -26,7 +117,7 @@ float mapBlobber(vec3 p) {
   p.y -= 0.15;
   float torusD = sdfTorus(p, vec2(0.9, 0.3));
 
-  p1.y -= sin(u_time * 2.5) * 0.7 + 1.2;
+  p1.y -= sin(u_time * 1.3) * 1.1 + 0.8;
   float sphereD = sdfSphere(p1, 0.7);
 
   return opUnionSm(sphereD, torusD, 0.5);
@@ -83,6 +174,7 @@ Hit map(vec3 p) {
   float d2 = mapCubeThing(p);
   float d3 = mapCrystal(p);
   float d4 = mapFrame(p);
+  float d5 = sdfPlane(p, vec3(0.0, 1.0, 0.0), 0.0); // Ground plane
 
   float minD = d1;
   int matID = 1; // Red blob material
@@ -99,6 +191,10 @@ Hit map(vec3 p) {
     minD = d4;
     matID = 4; // Frame material
   }
+  if(d5 < minD) {
+    minD = d5;
+    matID = 0; // Ground material
+  }
 
   return Hit(minD, matID);
 }
@@ -113,10 +209,10 @@ vec3 getNormal(vec3 p) {
 
 Hit raycast(vec3 ro, vec3 rd) {
   float t = 0.0;
-  Hit hit = Hit(1e20, -1);
+  Hit hit = Hit(0.0, -1);
 
   // Ray march through scene objects
-  for(int i = 0; i < 100; i++) {
+  for(int i = 0; i < MAX_MARCHING_STEPS; i++) {
     hit = map(ro + rd * t);
     t += hit.d;
 
@@ -125,21 +221,11 @@ Hit raycast(vec3 ro, vec3 rd) {
       break;
     }
 
-    if(t > 20.0) {
+    if(t > MAX_VIEW_DISTANCE) {
       hit.d = 1e20;
       hit.matID = -1;
       break;
     }
-  }
-
-  // Raytrace floor without SDF, it's just a plane at y=0
-  // For reasons I don't fully understand treating the ground as an SDF causes problems
-  float floorD = (0.0 - ro.y) / rd.y;
-
-  // Check if floor is closer than other hits
-  if(floorD > 0.0 && floorD < hit.d) {
-    hit.d = floorD;
-    hit.matID = 0; // Ground material
   }
 
   return hit;
@@ -170,6 +256,48 @@ float calcSoftShadow(vec3 ro, vec3 rd, float mint, float maxt, float k) {
   return clamp(res, 0.0, 1.0);
 }
 
+// Shade a point with material and normal, returns final color with lighting
+vec3 shade(vec3 p, vec3 n, vec3 viewDir, Material mat, float distance) {
+  // Analytical antialiased checker pattern
+  if(mat.isChecker) {
+    vec2 uv = p.xz / CHECK_SIZE;
+    float filterWidth = distance * 0.002; // Adjust for distance
+
+    // Add the sine functions together and apply filtering
+    float checker = sin(uv.x * 6.28318) * sin(uv.y * 6.28318);
+    checker = smoothstep(-filterWidth, filterWidth, checker);
+
+    // Apply checker pattern
+    mat.color = mix(mat.color, mat.color * 0.3, checker * 0.8);
+  }
+
+  vec3 col = vec3(0.06, 0.06, 0.06) * mat.color; // Ambient light
+
+  // Loop through lights
+  for(int i = 0; i < LIGHTS.length(); i++) {
+    vec3 lightPos = LIGHTS[i].position;
+    vec3 lightCol = LIGHTS[i].color;
+
+    // Light direction & distance
+    vec3 lightDir = normalize(lightPos - p);
+    float lightDist = length(lightPos - p);
+
+    // Soft shadow factor (penumbra sphere tracing). Offset start to reduce self-shadowing acne.
+    float shadowFactor = calcSoftShadow(p + n * EPSILON * 6.0, lightDir, EPSILON, lightDist, 32.0);
+
+    // Classic diffuse shading
+    float diff = max(dot(n, lightDir), 0.0) * mat.diffuse * shadowFactor;
+    col += mat.color * diff * lightCol;
+
+    // Specular highlight using basic Blinn-Phong model
+    vec3 reflectDir = reflect(-lightDir, n);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), mat.hardness);
+    col += vec3(1.0) * spec * mat.specular * shadowFactor * lightCol;
+  }
+
+  return col;
+}
+
 void main() {
   vec4 worldPos = u_inverseViewProjectionMatrix * vec4(imgCoord.xy, 0.0, 1.0);
   worldPos /= worldPos.w; // Perspective
@@ -192,63 +320,19 @@ void main() {
     vec3 n;
     Material mat = MATERIALS[hit.matID];
 
-    // Check if ground or regular object
+    // Get normal, we can speed things up a litte for the ground plane
     if(hit.matID == 0) {
       n = vec3(0.0, 1.0, 0.0);
     } else {
       n = getNormal(p);
     }
 
-    // Distance-based filtered checker pattern in XZ plane for ground
-    if(mat.isChecker) {
-      float checkerSize = 1.3;
-      float distance = hit.d;
-      float fadeDistance = 0.0; // Distance at which checker starts fading
-      float maxDistance = 60.0;  // Distance at which checker completely disappears
+    // Shade the point using the shade function
+    vec3 viewDir = normalize(ro - p);
+    col = shade(p, n, viewDir, mat, hit.d);
 
-      // Calculate fade factor based on distance
-      float fadeFactor = 1.0 - smoothstep(fadeDistance, maxDistance, distance);
-
-      // Only apply checker if we're close enough
-      if(fadeFactor > 0.0) {
-        vec2 checker = fract(p.xz / checkerSize);
-
-        // Create antialiased checker pattern using smoothstep
-        float checkerPattern = step(0.5, checker.x) + step(0.5, checker.y);
-        checkerPattern = mod(checkerPattern, 2.0);
-
-        // Apply checker with distance fade
-        float checkerInfluence = checkerPattern * 0.6 * fadeFactor;
-        mat.color = mix(mat.color, mat.color * 0.4, checkerInfluence);
-      }
-    }
-
-    // Add some ambient light
-    col += vec3(0.09, 0.08, 0.08);
-
-    // Loop through lights
+    // Reflection for reflective materials, needs more rays!
     for(int i = 0; i < LIGHTS.length(); i++) {
-      vec3 lightPos = LIGHTS[i].position;
-      vec3 lightCol = LIGHTS[i].color;
-
-      // Light direction & distance
-      vec3 lightDir = normalize(lightPos - p);
-      float lightDist = length(lightPos - p);
-
-      // Soft shadow factor (penumbra sphere tracing). Offset start to reduce self-shadowing acne.
-      float shadowFactor = calcSoftShadow(p + n * EPSILON * 6.0, lightDir, EPSILON, lightDist, 32.0);
-
-      // Classic diffuse shading
-      float diff = max(dot(n, lightDir), 0.0) * mat.diffuse * shadowFactor;
-      col += mat.color * diff * lightCol;
-
-      // Specular highlight using basic Blinn-Phong model
-      vec3 viewDir = normalize(ro - p);
-      vec3 reflectDir = reflect(-lightDir, n);
-      float spec = pow(max(dot(viewDir, reflectDir), 0.0), mat.hardness);
-      col += vec3(1.0) * spec * mat.specular * shadowFactor * lightCol;
-
-      // Reflection for reflective materials, needs more rays!
       if(mat.isReflective) {
         vec3 reflectDir = reflect(rd, n);
         Hit reflectHit = raycast(p + n * EPSILON * 10.0, reflectDir);
@@ -256,8 +340,10 @@ void main() {
           vec3 reflectP = p + reflectDir * reflectHit.d;
           vec3 reflectN = getNormal(reflectP);
           Material reflectMat = MATERIALS[reflectHit.matID];
-          float reflectDiff = max(dot(reflectN, lightDir), 0.0) * reflectMat.diffuse;
-          vec3 reflectCol = reflectMat.color * reflectDiff;
+
+          // Use shade() for reflection calculation
+          vec3 reflectViewDir = normalize(p - reflectP);
+          vec3 reflectCol = shade(reflectP, reflectN, reflectViewDir, reflectMat, reflectHit.d);
           col += reflectCol * 0.3;
         }
       }

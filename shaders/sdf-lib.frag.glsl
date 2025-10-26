@@ -17,6 +17,10 @@ struct Light {
   vec3 color;
 };
 
+float sdfPlane(vec3 p, vec3 n, float h) {
+  return dot(p, n) + h; // n must be normalized
+}
+
 float sdfSphere(vec3 p, float s) {
   return length(p) - s;
 }
