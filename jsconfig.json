@@ -6,6 +6,6 @@
     "moduleResolution": "nodenext",
     "module": "nodenext"
   },
-  "include": ["app/**/*.js", "app/types.d.ts"],
+  "include": ["src/**/*.js", "src/types.d.ts"],
   "exclude": ["node_modules"]
 }

@@ -5,11 +5,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "vite",
-    "dev": "vite",
-    "preview": "vite build && vite preview",
-    "build": "vite build",
-    "serve": "vite preview",
+    "start": "vite --config .dev/vite.config.js",
+    "dev": "vite --config .dev/vite.config.js",
+    "preview": "vite  --config .dev/vite.config.js build && vite  --config .dev/vite.config.js preview",
+    "build": "vite  --config .dev/vite.config.js build",
+    "serve": "vite  --config .dev/vite.config.js preview",
     "lint": "eslint . --config .dev/eslint.config.mjs && npm run format:check",
     "format": "prettier --config .dev/.prettierrc --write .",
     "format:check": "prettier --config .dev/.prettierrc --check ."
