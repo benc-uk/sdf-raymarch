@@ -39,7 +39,6 @@ const uniforms = {
 }
 
 export function initUI() {
-  const canvas = /** @type {HTMLCanvasElement} */ (document.querySelector('canvas'))
   const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('select'))
   let timeoutId = null
 
@@ -50,7 +49,7 @@ export function initUI() {
     switchScene(scene)
   })
 
-  canvas.addEventListener('mousemove', () => {
+  document.addEventListener('mousemove', () => {
     sceneSelector.classList.remove('hidden')
     sceneSelector.classList.add('visible')
 
@@ -62,7 +61,7 @@ export function initUI() {
     }, 3000)
   })
 
-  canvas.addEventListener('mouseleave', () => {
+  document.addEventListener('mouseleave', () => {
     sceneSelector.classList.remove('visible')
     sceneSelector.classList.add('hidden')
   })
