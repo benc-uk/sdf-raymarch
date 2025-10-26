@@ -67,6 +67,12 @@ float sdfOctahedron(vec3 p, float s) {
   return length(vec3(q.x, q.y - s + k, q.z - k));
 }
 
+float sdfCutHollowSphere(vec3 p, float r, float h, float t) {
+  float w = sqrt(r * r - h * h);
+  vec2 q = vec2(length(p.xz), p.y);
+  return ((h * q.x < w * q.y) ? length(q - vec2(w, h)) : abs(length(q) - r)) - t;
+}
+
 float opUnionSm(float d1, float d2, float k) {
   float h = max(k - abs(d1 - d2), 0.0) / k;
   return min(d1, d2) - h * h * k * 0.25;

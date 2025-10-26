@@ -15,98 +15,79 @@ const int MAX_MARCHING_STEPS = 128;
 const float MAX_VIEW_DISTANCE = 25.0;
 const float CHECK_SIZE = 1.3;
 
-const Light LIGHTS[2] = Light[](Light(vec3(5.0, 8.0, 5.0), vec3(1.0, 0.95, 0.9)), Light(vec3(-4.0, 6.0, -3.0), vec3(0.84, 0.53, 0.25)));
-const Material MATERIALS[5] = Material[](Material(vec3(0.6, 0.6, 0.6), 1.0, 0.0, 1.0, true, true),      // Ground is grey
-Material(vec3(0.83, 0.26, 0.09), 1.0, 0.3, 6.0, false, true),  // Reddish
-Material(vec3(0.21, 0.16, 0.88), 1.0, 0.9, 64.0, false, false),// Bluish
-Material(vec3(0.1, 0.8, 0.1), 1.0, 1.0, 3.0, false, true),     // Shiny green
-Material(vec3(0.19, 0.27, 0.37), 1.0, 0.1, 1.0, false, false)  // Dark metallic grey
-);
+const Light LIGHTS[2] = Light[](Light(vec3(5.0, 8.0, 5.0), vec3(0.67, 0.97, 0.97)), Light(vec3(-4.0, 6.0, -3.0), vec3(1.0, 0.79, 0.61)));
+const Material MATERIALS[3] = Material[](Material(vec3(0.34, 0.09, 0.17), 1.0, 0.0, 1.0, false, false),  // floor reddish
+Material(vec3(0.9, 0.9, 0.95), 0.6, 0.8, 164.0, false, false), // china like
+Material(vec3(0.22, 0.57, 0.11), 1.0, 1.0, 100.0, false, true));  // green slime
 
-// This is the red blobby object made up from a sphere and torus
-float mapBlobber(vec3 p) {
-  vec3 p1 = p;
+float mapCup(vec3 p) {
+  float outer = sdfCutHollowSphere(p + vec3(0.0, -2.8, 0.0), 1.8, -0.3, 0.02);
 
-  p.y -= 0.15;
-  float torusD = sdfTorus(p, vec2(0.9, 0.3));
+  float ridge = sdfTorus(p + vec3(0.0, -2.4, 0.0), vec2(1.8, 0.05));
+  outer = opUnionSm(outer, ridge, 0.1);
 
-  p1.y -= sin(u_time * 1.3) * 1.1 + 0.8;
-  float sphereD = sdfSphere(p1, 0.7);
+  // carve out dimples using sdfSphere and opSubSm
+  for(int i = 0; i < 8; i++) {
+    float angle = float(i) / 8.0 * 6.28318;
+    float r = 1.3;
+    vec3 dimplePos = vec3(cos(angle) * r, 1.9, sin(angle) * r);
+    float dimple = sdfSphere(p - dimplePos, 0.35);
+    outer = opUnionSm(dimple, outer, 0.3);
+  }
 
-  return opUnionSm(sphereD, torusD, 0.5);
+  float stem = sdfCylinder(p + vec3(0.0, 0.0, 0.0), vec2(0.5, 1.0));
+  float base = sdfTorus(p, vec2(0.61, 0.15));
+  stem = opUnionSm(stem, base, 0.2);
+
+  return opUnionSm(outer, stem, 0.2);
 }
 
-// This is the blue cube with holes and a cylinder on top
-float mapCubeThing(vec3 p) {
-  p += vec3(2.0, -0.59, 0.8);
-  float cubeD = sdfCubeRound(p, vec3(0.5), 0.13);
+float mapSlime(vec3 p) {
+  float surf = sdfCylinder(p + vec3(0.0, -2.35, 0.0), vec2(1.75, 0.01));
 
+  // bubbles rising and falling
   vec3 p1 = p;
-  p1.y -= 1.4;
-  float cylD = sdfCylinder(p1, vec2(0.3, 1.0));
+  p1 += vec3(0.0, sin(u_time * 3.2) * 1.1 - 2.9, 0.8);
+  float bubble1 = sdfSphere(p1, 0.25);
 
-  // carve four spheres from the sides of the cube with subtract
-  vec3 hole1Pos = p - vec3(0.5, 0.0, 0.0);
-  vec3 hole2Pos = p - vec3(-0.5, 0.0, 0.0);
-  vec3 hole3Pos = p - vec3(0.0, 0.0, 0.5);
-  vec3 hole4Pos = p - vec3(0.0, 0.0, -0.5);
-  float holeRadius = 0.4;
-  cubeD = opSub(sdfSphere(hole1Pos, holeRadius), cubeD);
-  cubeD = opSub(sdfSphere(hole2Pos, holeRadius), cubeD);
-  cubeD = opSub(sdfSphere(hole3Pos, holeRadius), cubeD);
-  cubeD = opSub(sdfSphere(hole4Pos, holeRadius), cubeD);
+  vec3 p2 = p;
+  p2 += vec3(1.0, sin(0.4 + u_time * 3.1) * 1.0 - 3.0, -0.2);
+  float bubble2 = sdfSphere(p2, 0.12);
 
-  return opUnionSm(cubeD, cylD, 0.3);
-}
+  vec3 p3 = p;
+  p3 += vec3(-1.2, cos(3.0 + u_time * 2.9) * 1.2 - 3.1, 0.4);
+  float bubble3 = sdfSphere(p3, 0.18);
 
-// Green spinning crystal made from two octahedrons
-float mapCrystal(vec3 p) {
-  p += vec3(-2.4, -1.5, 1.0);
-  p.xz *= rot2D(u_time);
+  vec3 p4 = p;
+  p4 += vec3(-0.3, sin(1.5 + u_time * 3.3) * 1.0 - 2.8, -0.9);
+  float bubble4 = sdfSphere(p4, 0.31);
 
-  vec3 p1 = p;
-  p1.xz *= rot2D(0.7);
-  float octD1 = sdfOctahedron(p, 0.6);
-  float octD2 = sdfOctahedron(p1, 0.6);
+  float bubbles = min(bubble1, min(bubble2, min(bubble3, bubble4)));
 
-  return opUnionSm(octD1, octD2, 0.2);
-}
-
-// Metallic frame box
-float mapFrame(vec3 p) {
-  p += vec3(-2.4, 0.0, 1.0);
-  float frameD = sdfBoxFrame(p, vec3(1.0, 1.0, 1.0), 0.1);
-
-  return frameD;
+  return opUnionSm(surf, bubbles, 0.4);
 }
 
 // Map function combining all scene objects
 // This returns a distance and material ID
 Hit map(vec3 p) {
-  float d1 = mapBlobber(p);
-  float d2 = mapCubeThing(p);
-  float d3 = mapCrystal(p);
-  float d4 = mapFrame(p);
-  float d5 = sdfPlane(p, vec3(0.0, 1.0, 0.0), 0.0); // Ground plane
+  float d1 = sdfPlane(p, vec3(0.0, 1.0, 0.0), 0.0); // Ground plane
+  float d2 = mapCup(p);
+  float d3 = mapSlime(p);
 
-  float minD = d1;
-  int matID = 1; // Red blob material
+  float minD = 1e20;
+  int matID = -1;
 
+  if(d1 < minD) {
+    minD = d1;
+    matID = 0; // Ground material
+  }
   if(d2 < minD) {
     minD = d2;
-    matID = 2; // Cube thing material 
+    matID = 1; // Cup material
   }
   if(d3 < minD) {
     minD = d3;
-    matID = 3; // Crystal material
-  }
-  if(d4 < minD) {
-    minD = d4;
-    matID = 4; // Frame material
-  }
-  if(d5 < minD) {
-    minD = d5;
-    matID = 0; // Ground material
+    matID = 2; // Slime material
   }
 
   return Hit(minD, matID);

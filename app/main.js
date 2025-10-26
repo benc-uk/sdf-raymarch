@@ -4,6 +4,7 @@ import { Camera } from './camera.js'
 
 import vertShader from '../shaders/main.vert.glsl?raw'
 import scene1Frag from '../shaders/scene1.frag.glsl?raw'
+import scene2Frag from '../shaders/scene2.frag.glsl?raw'
 import sdfLibFrag from '../shaders/sdf-lib.frag.glsl?raw'
 
 let progInfo = null
@@ -19,15 +20,14 @@ const gl = initGL('canvas', {
 
 // Camera
 const cameraRadius = 6
-const cameraHeight = 3
+let cameraHeight = 3
 const rotationSpeed = 0.4
 const camera = new Camera([-1, 2, 5], [0, 0, 0], Math.PI / 4, gl.canvas.width / gl.canvas.height)
 
 // Scene management
 const sceneMap = {
-  scene1: prependSdfLib(scene1Frag),
-  scene2: prependSdfLib(scene1Frag),
-  scene3: prependSdfLib(scene1Frag),
+  'Scene: Shapes': prependSdfLib(scene1Frag),
+  'Scene: Cauldron Slime': prependSdfLib(scene2Frag),
 }
 
 const uniforms = {
@@ -41,6 +41,14 @@ const uniforms = {
 export function initUI() {
   const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('select'))
   let timeoutId = null
+
+  sceneSelector.innerHTML = ''
+  for (const sceneName in sceneMap) {
+    const option = document.createElement('option')
+    option.value = sceneName
+    option.textContent = sceneName
+    sceneSelector.appendChild(option)
+  }
 
   sceneSelector.addEventListener('change', (e) => {
     //@ts-ignore
@@ -72,6 +80,13 @@ export function switchScene(sceneName) {
   fullScreenBuffInfo = twgl.createBufferInfoFromArrays(gl, {
     position: [-1, -1, 0, 1, -1, 0, -1, 1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0],
   })
+
+  camera.target = [0, 0, 0]
+  cameraHeight = 3
+  if (sceneName == 'Scene: Cauldron Slime') {
+    camera.target = [0, 2, 0]
+    cameraHeight = 4
+  }
 
   const sceneFrag = sceneMap[sceneName]
   progInfo = twgl.createProgramInfo(gl, [vertShader, sceneFrag])
@@ -111,5 +126,5 @@ function render(ts) {
 
 // !ENTRYPOINT HERE!
 initUI()
-switchScene('scene1')
+switchScene('Scene: Shapes')
 render(0)

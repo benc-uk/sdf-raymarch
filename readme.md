@@ -5,6 +5,7 @@ Experiments with [ray marching](https://en.wikipedia.org/wiki/Ray_marching) and 
 [![Static Badge](https://img.shields.io/badge/LIVE%20VERSION!-20B2AA?style=for-the-badge&logo=open3d&logoColor=white&color=209955)](http://raymarch.benc.dev/)
 
 ![](./public/img/screen_01.png)
+![](./public/img/screen_02.png)
 
 ## Tech
 
