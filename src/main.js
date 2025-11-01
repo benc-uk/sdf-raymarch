@@ -48,6 +48,7 @@ const tempSceneShaderMap = {
 
 export function initUI() {
   const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('select'))
+  const canvas = /** @type {HTMLCanvasElement} */ (document.querySelector('canvas'))
   let timeoutId = null
 
   for (const [id, scene] of Object.entries(sceneMap)) {
@@ -79,6 +80,15 @@ export function initUI() {
   document.addEventListener('mouseleave', () => {
     sceneSelector.classList.remove('visible')
     sceneSelector.classList.add('hidden')
+  })
+
+  // Fullscreen on double-click/tap
+  canvas.addEventListener('dblclick', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen()
+    } else {
+      document.exitFullscreen()
+    }
   })
 }
 
@@ -150,5 +160,5 @@ function render(ts) {
 
 // !ENTRYPOINT HERE!
 initUI()
-await switchScene('s3')
+await switchScene('s1')
 render(0)
