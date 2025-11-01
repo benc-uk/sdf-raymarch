@@ -135,6 +135,34 @@ export function getGL() {
   return gl
 }
 
+export function getCanvas() {
+  if (!gl) {
+    throw new Error('WebGL context not initialized. Call initGL() first.')
+  }
+  return /** @type {HTMLCanvasElement} */ (gl.canvas)
+}
+
+export function getCanvasSize() {
+  if (!gl) {
+    throw new Error('WebGL context not initialized. Call initGL() first.')
+  }
+  return [gl.canvas.width, gl.canvas.height]
+}
+
+export function getViewportSize() {
+  if (!gl) {
+    throw new Error('WebGL context not initialized. Call initGL() first.')
+  }
+  return [gl.drawingBufferWidth, gl.drawingBufferHeight]
+}
+
+export function getAspectRatio() {
+  if (!gl) {
+    throw new Error('WebGL context not initialized. Call initGL() first.')
+  }
+  return gl.canvas.width / gl.canvas.height
+}
+
 function resize(canvas, width, height) {
   canvas.width = width
   canvas.height = height
@@ -182,7 +210,7 @@ function fit(canvas) {
  * Update per-frame stats (currently only FPS). Safe to call even if disabled.
  * @param {number} [ts=performance.now()] - The high-resolution timestamp (from requestAnimationFrame).
  */
-export function glUpdateStats(ts = performance.now()) {
+export function updateStats(ts = performance.now()) {
   if (!fpsEnabled) return
 
   fpsFrameCount++

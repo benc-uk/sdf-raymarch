@@ -3,11 +3,12 @@
 // (C) Ben Coleman 2025
 // License: MIT (see LICENSE file)
 // Simple camera implementation for WebGL applications
+// With position, target, fov and aspect ratio and mouse/touch controls
 // ==========================================================================
 
 import * as twgl from 'twgl.js'
 
-export class Camera {
+export default class Camera {
   #pos = [0, 0, 0]
   #target = [0, 0, -1]
   #fov = Math.PI / 4
@@ -17,6 +18,11 @@ export class Camera {
   #projectionMatrix = null
   #viewProjectionMatrix = null
   #inverseViewProjectionMatrix = null
+
+  // Used for mouse/touch controls only
+  #mouseLocked
+  #lastTouchX
+  #lastTouchY
 
   /**
    * @param {[number, number, number]} pos - Camera position
@@ -51,7 +57,7 @@ export class Camera {
   }
 
   _updateViewMatrix() {
-    const cameraMatrix = twgl.m4.lookAt(this.pos, this.target, this.#up)
+    const cameraMatrix = twgl.m4.lookAt(this.#pos, this.#target, this.#up)
     this.#viewMatrix = twgl.m4.inverse(cameraMatrix)
     this._updateViewProjectionMatrix()
   }
@@ -96,5 +102,48 @@ export class Camera {
 
   get inverseViewProjectionMatrix() {
     return this.#inverseViewProjectionMatrix
+  }
+
+  /**
+   * Enable mouse and touch controls for the camera, this is overridden in subclasses
+   * @param {HTMLCanvasElement} canvas Canvas to capture and handle movements
+   * @param {(moveX:number, moveY:number, wheel:number) => void} moveCallback
+   */
+  addMouseAndTouchControls(canvas, moveCallback) {
+    canvas.addEventListener('click', () => {
+      if (!this.#mouseLocked) {
+        canvas.requestPointerLock()
+        this.#mouseLocked = true
+      } else {
+        document.exitPointerLock()
+        this.#mouseLocked = false
+      }
+    })
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (document.pointerLockElement === canvas) {
+        const movementX = e.movementX || 0
+        const movementY = e.movementY || 0
+
+        moveCallback(movementX, movementY, 0)
+      }
+    })
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0]
+        const movementX = touch.clientX - (this.#lastTouchX || touch.clientX)
+        const movementY = touch.clientY - (this.#lastTouchY || touch.clientY)
+
+        moveCallback(movementX, movementY, 0)
+
+        this.#lastTouchX = touch.clientX
+        this.#lastTouchY = touch.clientY
+      }
+    })
+
+    canvas.addEventListener('wheel', (e) => {
+      moveCallback(0, 0, e.deltaY)
+    })
   }
 }

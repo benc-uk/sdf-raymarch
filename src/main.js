@@ -4,16 +4,17 @@
 // ==========================================================================
 
 import * as twgl from 'twgl.js'
-import { glUpdateStats, initGL } from './gl.js'
-import { CameraOrbital } from './camera-orbit.js'
+import { updateStats, initGL, getCanvas } from './gl.js'
+import CameraOrbital from './camera-orbit.js'
+import CameraDirectional from './camera-directional.js'
 
-// These are shared shader chunks
+// These are GLSL shader chunks
 import vertShader from '../shaders/main.vert.glsl?raw'
 import sdfLibFrag from '../shaders/inc-sdf-lib.frag.glsl?raw'
 import renderLibFrag from '../shaders/inc-render-lib.frag.glsl?raw'
-import scene1Frag from '../public/scenes/scene1.frag.glsl?raw'
-import scene2Frag from '../public/scenes/scene2.frag.glsl?raw'
-import scene3Frag from '../public/scenes/scene3.frag.glsl?raw'
+import scene1Frag from '../shaders/scenes/scene1.frag.glsl?raw'
+import scene2Frag from '../shaders/scenes/scene2.frag.glsl?raw'
+import scene3Frag from '../shaders/scenes/scene3.frag.glsl?raw'
 
 //@ts-ignore
 import sceneMap from './scenes.json'
@@ -22,8 +23,8 @@ let progInfo = null
 let fullScreenBuffInfo = null
 
 const gl = initGL('canvas', {
-  width: 800,
-  height: 600,
+  width: 1024,
+  height: 576,
   fitToContainer: true,
   resizeCanvas: false,
   showFPS: true,
@@ -48,7 +49,7 @@ const tempSceneShaderMap = {
 
 export function initUI() {
   const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('select'))
-  const canvas = /** @type {HTMLCanvasElement} */ (document.querySelector('canvas'))
+  const canvas = getCanvas()
   let timeoutId = null
 
   for (const [id, scene] of Object.entries(sceneMap)) {
@@ -107,11 +108,17 @@ export async function switchScene(sceneId) {
   // Camera
   switch (scene.camera.type) {
     case 'orbit':
-      camera = new CameraOrbital(scene.camera.target, scene.camera.fov, /** @type {HTMLCanvasElement} */ (gl.canvas), scene.camera.pitch, scene.camera.radius)
+      camera = new CameraOrbital(scene.camera.target, scene.camera.fov, getCanvas(), scene.camera.pitch, -0.3, scene.camera.radius)
+
+      // Optional minPitch parameter
       if (scene.camera.minPitch !== undefined) {
         camera.minPitch = scene.camera.minPitch
       }
       break
+    case 'directional':
+      camera = new CameraDirectional(scene.camera.position, scene.camera.target, scene.camera.direction, scene.camera.speed, scene.camera.fov, gl.canvas.width / gl.canvas.height)
+      break
+
     default:
       console.error(`Unknown camera type: ${scene.camera.type}`)
       return
@@ -134,6 +141,11 @@ export async function switchScene(sceneId) {
   // May move some of this to the render loop later
   gl.useProgram(progInfo.program)
   twgl.setBuffersAndAttributes(gl, progInfo, fullScreenBuffInfo)
+
+  // append scene id to url fragment
+  const url = new URL(window.location.toString())
+  url.hash = `#${sceneId}`
+  window.history.replaceState({}, '', url)
 }
 
 // Fake shader preprocessor to carry out #include directives
@@ -147,6 +159,8 @@ function preprocessor(shaderSrc) {
 function render(ts) {
   uniforms.u_time = ts * 0.001
 
+  camera.update(ts)
+
   // Update uniforms with new camera data
   uniforms.u_inverseViewProjectionMatrix = camera.inverseViewProjectionMatrix
   uniforms.u_cameraPos = camera.pos
@@ -154,11 +168,24 @@ function render(ts) {
   twgl.setUniforms(progInfo, uniforms)
   twgl.drawBufferInfo(gl, fullScreenBuffInfo)
 
-  glUpdateStats(ts) // only for FPS tracking, not strictly necessary
+  updateStats(ts) // only for FPS tracking, not strictly necessary
   requestAnimationFrame(render)
 }
 
-// !ENTRYPOINT HERE!
+// =========================================================================
+// 🪧 ENTRYPOINT HERE 🚦
+// =========================================================================
 initUI()
-await switchScene('s1')
+
+if (window.location.hash) {
+  const sceneId = window.location.hash.substring(1)
+  if (sceneMap[sceneId]) {
+    const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('select'))
+    sceneSelector.value = sceneId
+    switchScene(sceneId)
+  }
+} else {
+  switchScene('s1')
+}
+
 render(0)

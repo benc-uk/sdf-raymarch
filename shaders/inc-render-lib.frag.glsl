@@ -104,7 +104,7 @@ void main() {
 
   // Our ray origin and direction
   vec3 ro = u_cameraPos;
-  vec3 rd = normalize(worldPos.xyz - ro);
+  vec3 rd = normalize(worldPos.xyz - u_cameraPos);
 
   // Start raycasting
   Hit hit = raycast(ro, rd);
@@ -120,12 +120,12 @@ void main() {
     vec3 n;
     Material mat = MATERIALS[hit.matID];
 
-    // !DISABLED! Get normal, we can speed things up a little for the ground plane
-    //if(hit.matID == 0) {
-    //  n = vec3(0.0, 1.0, 0.0);
-    //} else {
-    n = getNormal(p);
-    //}
+    // Get normal, we can speed things up a little for the ground plane
+    if(hit.matID == 0) {
+      n = vec3(0.0, 1.0, 0.0);
+    } else {
+      n = getNormal(p);
+    }
 
     // Shade the point using the shade function
     vec3 viewDir = normalize(ro - p);

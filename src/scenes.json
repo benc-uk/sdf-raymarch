@@ -4,7 +4,7 @@
     "camera": {
       "type": "orbit",
       "pitch": 0.5,
-      "target": [0, 1.1, 0],
+      "target": [0, 1.1, 0.0],
       "radius": 6,
       "fov": 0.8
     },
@@ -26,12 +26,12 @@
   "s3": {
     "name": "Infinity Grid",
     "camera": {
-      "type": "orbit",
-      "pitch": 0.0,
-      "target": [0, 0, 0],
-      "radius": 8,
+      "type": "directional",
       "fov": 0.8,
-      "minPitch": -1.0
+      "position": [0.0, 0.0, 0.0],
+      "target": [0.0, -0.2, 1.0],
+      "direction": [0.0, 1.0, 2.5],
+      "speed": 7
     },
     "shaderUrl": "scenes/scene3.frag.glsl"
   }
