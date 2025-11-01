@@ -120,12 +120,12 @@ void main() {
     vec3 n;
     Material mat = MATERIALS[hit.matID];
 
-    // Get normal, we can speed things up a litte for the ground plane
-    if(hit.matID == 0) {
-      n = vec3(0.0, 1.0, 0.0);
-    } else {
-      n = getNormal(p);
-    }
+    // !DISABLED! Get normal, we can speed things up a little for the ground plane
+    //if(hit.matID == 0) {
+    //  n = vec3(0.0, 1.0, 0.0);
+    //} else {
+    n = getNormal(p);
+    //}
 
     // Shade the point using the shade function
     vec3 viewDir = normalize(ro - p);

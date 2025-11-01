@@ -1,0 +1,38 @@
+{
+  "s1": {
+    "name": "Weird Shapes",
+    "camera": {
+      "type": "orbit",
+      "pitch": 0.5,
+      "target": [0, 1.1, 0],
+      "radius": 6,
+      "fov": 0.8
+    },
+    "shaderUrl": "scenes/scene1.frag.glsl"
+  },
+
+  "s2": {
+    "name": "Slime Cauldron",
+    "camera": {
+      "type": "orbit",
+      "pitch": 0.55,
+      "target": [0, 2.3, 0],
+      "radius": 6,
+      "fov": 0.8
+    },
+    "shaderUrl": "scenes/scene2.frag.glsl"
+  },
+
+  "s3": {
+    "name": "Infinity Grid",
+    "camera": {
+      "type": "orbit",
+      "pitch": 0.0,
+      "target": [0, 0, 0],
+      "radius": 8,
+      "fov": 0.8,
+      "minPitch": -1.0
+    },
+    "shaderUrl": "scenes/scene3.frag.glsl"
+  }
+}

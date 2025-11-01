@@ -132,11 +132,10 @@
     <!-- Set up WebGL and render the scene, almost entirely boilerplate / generic code -->
     <!-- All the work is done in the fragment shader, everything else is a means to that -->
     <script type="module">
-      // Import TWGL to make WebGL easier!
-      // See: https://twgljs.org/
+      // Import TWGL to make WebGL easier! See: https://twgljs.org/
       import * as twgl from 'https://esm.sh/twgl.js'
 
-      // Get WebGL2 context & compile our shaders
+      // WebGL2 context & compile shaders, createProgramInfo takes ids of script tags
       const gl = document.querySelector('canvas').getContext('webgl2')
       const progInfo = twgl.createProgramInfo(gl, ['vs', 'fs'])
 

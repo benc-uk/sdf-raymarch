@@ -8,15 +8,15 @@
 import * as twgl from 'twgl.js'
 
 export class Camera {
-  #pos
-  #target
-  #fov
-  #up
-  #aspectRatio
-  #viewMatrix
-  #projectionMatrix
-  #viewProjectionMatrix
-  #inverseViewProjectionMatrix
+  #pos = [0, 0, 0]
+  #target = [0, 0, -1]
+  #fov = Math.PI / 4
+  #up = [0, 1, 0]
+  #aspectRatio = 1
+  #viewMatrix = null
+  #projectionMatrix = null
+  #viewProjectionMatrix = null
+  #inverseViewProjectionMatrix = null
 
   /**
    * @param {[number, number, number]} pos - Camera position
@@ -96,9 +96,5 @@ export class Camera {
 
   get inverseViewProjectionMatrix() {
     return this.#inverseViewProjectionMatrix
-  }
-
-  update() {
-    // Placeholder for future movement/rotation logic
   }
 }

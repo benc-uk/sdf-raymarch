@@ -21,6 +21,19 @@ Try out the live version deployed on Cloudflare Pages:
 
 A super minimal single page GPU ray marcher in [100 lines of code](./public/mini-comments/index.html).
 
+## Development
+
+### Repo Structure
+
+```text
+.
+├── public
+│   └── scenes        - Shader files for different scenes
+├── shaders           - Shared shader code includes
+└── src               - Main application code
+    └── scenes.json   - Scene configuration file
+```
+
 ### Links
 
 Just a brain dump of useful links for learning about ray marching and SDFs.

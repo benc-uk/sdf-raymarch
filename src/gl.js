@@ -197,3 +197,16 @@ export function glUpdateStats(ts = performance.now()) {
     fpsLastUpdate = ts
   }
 }
+
+/**
+ * Utility to fetch a shader from a URL
+ * @param {string} url
+ * @returns
+ */
+export async function fetchShader(url) {
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch shader from ${url}: ${response.status} ${response.statusText}`)
+  }
+  return await response.text()
+}
