@@ -1,0 +1,42 @@
+body,
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  background-color: #111;
+  display: flex;
+  flex-direction: column;
+}
+
+select {
+  padding: 0.5rem 0.4rem;
+  font-size: 1.2rem;
+  border-radius: 0.3rem;
+  border: none;
+  background-color: #383838;
+  color: #eee;
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  width: 11rem;
+}
+
+#resSelect {
+  top: 4rem;
+}
+
+option {
+  font-size: 1.2rem;
+  border: none;
+}
+
+.visible {
+  display: block;
+}
+
+.hidden {
+  display: none;
+}

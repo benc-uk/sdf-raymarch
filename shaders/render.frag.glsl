@@ -74,9 +74,22 @@ vec3 shade(vec3 p, vec3 n, vec3 viewDir, Material mat, float distance) {
   vec3 baseColor = mat.color;
   // HACK: Texture mapping if applicable
   if(mat.texIndex != -1) {
-    vec2 uv = p.xz * 0.09; // TODO: MAJOR_TODO!! This is hardcoded for the ground plane
-    vec3 texColor = texture(u_textures[0], uv).rgb;
-    baseColor = texColor;
+    if(mat.texIndex == 0) {
+      vec2 uv = p.xz * 0.06;
+      baseColor = texture(u_texture0, uv).rgb;
+    }
+    if(mat.texIndex == 1) {
+      vec2 uv = p.xz * 0.06;
+      baseColor = texture(u_texture1, uv).rgb;
+    }
+    if(mat.texIndex == 2) {
+      vec2 uv = p.xz * 0.06;
+      baseColor = texture(u_texture2, uv).rgb;
+    }
+    if(mat.texIndex == 3) {
+      vec2 uv = p.xz * 0.06;
+      baseColor = texture(u_texture3, uv).rgb;
+    }
   }
 
   vec3 col = baseColor * vec3(0.06, 0.06, 0.06); // Ambient term

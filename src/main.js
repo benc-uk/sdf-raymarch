@@ -3,6 +3,8 @@
 // (C) Ben Coleman 2025
 // ==========================================================================
 
+import './style.css'
+
 import * as twgl from 'twgl.js'
 import { updateStats, initGL, getCanvas } from './gl.js'
 import CameraOrbital from './camera-orbit.js'
@@ -10,8 +12,8 @@ import CameraDirectional from './camera-directional.js'
 
 // These are GLSL shader chunks
 import vertShader from '../shaders/main.vert.glsl?raw'
-import sdfLibFrag from '../shaders/inc-sdf-lib.frag.glsl?raw'
-import renderLibFrag from '../shaders/inc-render-lib.frag.glsl?raw'
+import sdfLibFrag from '../shaders/sdf.frag.glsl?raw'
+import renderLibFrag from '../shaders/render.frag.glsl?raw'
 import scene1Frag from '../shaders/scenes/scene1.frag.glsl?raw'
 import scene2Frag from '../shaders/scenes/scene2.frag.glsl?raw'
 import scene3Frag from '../shaders/scenes/scene3.frag.glsl?raw'
@@ -22,9 +24,11 @@ import sceneMap from './scenes.json'
 let progInfo = null
 let fullScreenBuffInfo = null
 
+const savedRes = JSON.parse(localStorage.getItem('resolution')) || { w: 1024, h: 768 }
+
 const gl = initGL('canvas', {
-  width: 1024,
-  height: 576,
+  width: savedRes.w || 1024,
+  height: savedRes.h || 768,
   fitToContainer: true,
   resizeCanvas: false,
   showFPS: true,
@@ -32,19 +36,10 @@ const gl = initGL('canvas', {
 
 let camera = null
 
-const uniforms = {
+let uniforms = {
   u_resolution: [gl.canvas.width, gl.canvas.height],
   u_aspect: gl.canvas.width / gl.canvas.height,
   u_time: 0,
-  u_inverseViewProjectionMatrix: null, // Will be set each frame
-  u_cameraPos: null, // Will be set each frame
-  u_textures: [
-    twgl.createTexture(gl, {
-      src: 'textures/carpet.jpg',
-      wrap: gl.REPEAT,
-      minMag: gl.LINEAR,
-    }),
-  ],
 }
 
 // Temporary map of shaders for testing without fetch
@@ -55,7 +50,9 @@ const tempSceneShaderMap = {
 }
 
 export function initUI() {
-  const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('select'))
+  const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('#sceneSelect'))
+  const resSelector = /** @type {HTMLSelectElement} */ (document.querySelector('#resSelect'))
+
   const canvas = getCanvas()
   let timeoutId = null
 
@@ -76,18 +73,24 @@ export function initUI() {
   document.addEventListener('mousemove', () => {
     sceneSelector.classList.remove('hidden')
     sceneSelector.classList.add('visible')
+    resSelector.classList.remove('hidden')
+    resSelector.classList.add('visible')
 
     if (timeoutId) clearTimeout(timeoutId)
 
     timeoutId = setTimeout(() => {
       sceneSelector.classList.remove('visible')
       sceneSelector.classList.add('hidden')
+      resSelector.classList.remove('visible')
+      resSelector.classList.add('hidden')
     }, 3000)
   })
 
   document.addEventListener('mouseleave', () => {
     sceneSelector.classList.remove('visible')
     sceneSelector.classList.add('hidden')
+    resSelector.classList.remove('visible')
+    resSelector.classList.add('hidden')
   })
 
   // Fullscreen on double-click/tap
@@ -98,6 +101,17 @@ export function initUI() {
       document.exitFullscreen()
     }
   })
+
+  resSelector.value = `${gl.canvas.width}x${gl.canvas.height}`
+  resSelector.addEventListener('change', (e) => {
+    // save selected resolution to localStorage and reload page
+    //@ts-ignore
+    const res = e.target.value
+    const [w, h] = res.split('x').map(Number)
+    localStorage.setItem('resolution', JSON.stringify({ w, h }))
+    window.location.reload()
+  })
+  localStorage.setItem('resolution', JSON.stringify({ w: gl.canvas.width, h: gl.canvas.height }))
 }
 
 // Switches the current scene by updating the fragment shader.
@@ -145,14 +159,38 @@ export async function switchScene(sceneId) {
     console.error('Shader program creation error:', err)
   })
 
-  // May move some of this to the render loop later
+  uniforms = {
+    u_resolution: [gl.canvas.width, gl.canvas.height],
+    u_aspect: gl.canvas.width / gl.canvas.height,
+    u_time: 0,
+  }
+
+  // Load any textures for the scene
+  if (scene.textures && scene.textures.length > 0) {
+    for (const [index, texName] of scene.textures.entries()) {
+      const tex = twgl.createTexture(gl, {
+        src: `/textures/${texName}`,
+        crossOrigin: 'anonymous',
+        minMag: gl.LINEAR,
+        wrap: gl.REPEAT,
+        flipY: 1,
+      })
+      uniforms[`u_texture${index}`] = tex
+    }
+  }
+
   gl.useProgram(progInfo.program)
   twgl.setBuffersAndAttributes(gl, progInfo, fullScreenBuffInfo)
 
-  // Append scene id to url fragment
+  // Append scene id to url fragment, making it shareable
   const url = new URL(window.location.toString())
   url.hash = `#${sceneId}`
   window.history.replaceState({}, '', url)
+
+  // Update uniforms with new camera data
+  uniforms.u_inverseViewProjectionMatrix = camera.inverseViewProjectionMatrix
+  uniforms.u_cameraPos = camera.pos
+  twgl.setUniforms(progInfo, uniforms)
 }
 
 // Fake shader preprocessor to carry out #include directives
@@ -187,7 +225,7 @@ initUI()
 if (window.location.hash) {
   const sceneId = window.location.hash.substring(1)
   if (sceneMap[sceneId]) {
-    const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('select'))
+    const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('#sceneSelect'))
     sceneSelector.value = sceneId
     switchScene(sceneId)
   }

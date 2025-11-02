@@ -4,7 +4,14 @@ out vec4 pixel;
 uniform float u_time;
 uniform vec3 u_cameraPos;
 uniform mat4 u_inverseViewProjectionMatrix;
-uniform sampler2D u_textures[4];
+uniform sampler2D u_texture0;
+uniform sampler2D u_texture1;
+uniform sampler2D u_texture2;
+uniform sampler2D u_texture3;
+uniform sampler2D u_texture4;
+uniform sampler2D u_texture5;
+uniform sampler2D u_texture6;
+uniform sampler2D u_texture7;
 
 struct Hit {
   float d;

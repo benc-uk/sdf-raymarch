@@ -6,45 +6,28 @@
     <link rel="icon" type="image/svg" href="img/icon.svg" />
     <title>Ray Marching SDF Renderer</title>
     <script type="module" src="main.js"></script>
-    <style>
-      body,
-      html {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        justify-content: center;
-        align-items: center;
-        background-color: #111;
-        display: flex;
-        flex-direction: column;
-      }
-      select {
-        padding: 0.5rem 0.9rem;
-        font-size: 1.2rem;
-        border-radius: 0.3rem;
-        border: none;
-        background-color: #252525;
-        color: #eee;
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-      }
-      option {
-        font-size: 1.2rem;
-        border: none;
-      }
-      .visible {
-        display: block;
-      }
-      .hidden {
-        display: none;
-      }
-    </style>
   </head>
   <body>
-    <select class="hidden"></select>
-
+    <select class="hidden" id="sceneSelect"></select>
+    <select class="hidden" id="resSelect">
+      <optgroup label="4:3 Aspect">
+        <option value="400x300">400 x 300</option>
+        <option value="800x600">800 x 600</option>
+        <option value="1024x768" selected>1024 x 768</option>
+        <option value="1280x960">1280 x 960</option>
+      </optgroup>
+      <optgroup label="16:9 Aspect">
+        <option value="640x360">640 x 360</option>
+        <option value="1280x720">1280 x 720</option>
+        <option value="1920x1080">1920 x 1080</option>
+      </optgroup>
+      <optgroup label="20:9 Aspect">
+        <option value="600x270">600 x 270</option>
+        <option value="720x324">720 x 324</option>
+        <option value="1080x486">1080 x 486</option>
+        <option value="1440x648">1440 x 648</option>
+      </optgroup>
+    </select>
     <canvas></canvas>
   </body>
 </html>

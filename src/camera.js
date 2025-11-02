@@ -130,16 +130,25 @@ export default class Camera {
     })
 
     canvas.addEventListener('touchmove', (e) => {
+      console.log(`Last ${this.#lastTouchX}, ${this.#lastTouchY}`)
+
       if (e.touches.length === 1) {
         const touch = e.touches[0]
         const movementX = touch.clientX - (this.#lastTouchX || touch.clientX)
         const movementY = touch.clientY - (this.#lastTouchY || touch.clientY)
+
+        console.log(`Move ${movementX}, ${movementY}`)
 
         moveCallback(movementX, movementY, 0)
 
         this.#lastTouchX = touch.clientX
         this.#lastTouchY = touch.clientY
       }
+    })
+
+    canvas.addEventListener('touchend', () => {
+      this.#lastTouchX = null
+      this.#lastTouchY = null
     })
 
     canvas.addEventListener('wheel', (e) => {

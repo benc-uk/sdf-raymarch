@@ -20,7 +20,8 @@
       "radius": 6,
       "fov": 0.8
     },
-    "shaderUrl": "scenes/scene2.frag.glsl"
+    "shaderUrl": "scenes/scene2.frag.glsl",
+    "textures": ["carpet.jpg"]
   },
 
   "s3": {
