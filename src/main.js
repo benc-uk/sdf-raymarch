@@ -38,6 +38,13 @@ const uniforms = {
   u_time: 0,
   u_inverseViewProjectionMatrix: null, // Will be set each frame
   u_cameraPos: null, // Will be set each frame
+  u_textures: [
+    twgl.createTexture(gl, {
+      src: 'textures/carpet.jpg',
+      wrap: gl.REPEAT,
+      minMag: gl.LINEAR,
+    }),
+  ],
 }
 
 // Temporary map of shaders for testing without fetch
@@ -142,7 +149,7 @@ export async function switchScene(sceneId) {
   gl.useProgram(progInfo.program)
   twgl.setBuffersAndAttributes(gl, progInfo, fullScreenBuffInfo)
 
-  // append scene id to url fragment
+  // Append scene id to url fragment
   const url = new URL(window.location.toString())
   url.hash = `#${sceneId}`
   window.history.replaceState({}, '', url)

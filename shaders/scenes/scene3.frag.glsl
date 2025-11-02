@@ -3,20 +3,13 @@ precision highp float;
 
 //#include sdflib
 
-in vec2 imgCoord;
-out vec4 pixel;
-
-uniform float u_time;
-uniform vec3 u_cameraPos;
-uniform mat4 u_inverseViewProjectionMatrix;
-
 const float EPSILON = 0.005;
 const int MAX_MARCHING_STEPS = 380;
 const float MAX_VIEW_DISTANCE = 120.0;
 const float CHECK_SIZE = 1.3;
 
 Light LIGHTS[1] = Light[](Light(vec3(0.0, 2.0, 0.0), vec3(1.0, 1.0, 1.0)));
-Material MATERIALS[2] = Material[](Material(vec3(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, false, false), Material(vec3(0.0, 0.0, 0.0), 1.0, 0.9, 12.0, false, false));
+Material MATERIALS[2] = Material[](Material(vec3(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, false, false, -1), Material(vec3(0.0, 0.0, 0.0), 1.0, 0.9, 12.0, false, false, -1));
 
 vec3 palette(in float t, in vec3 a, in vec3 b, in vec3 c, in vec3 d) {
   return a + b * cos(6.283185 * (c * t + d));

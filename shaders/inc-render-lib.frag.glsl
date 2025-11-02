@@ -71,7 +71,15 @@ vec3 shade(vec3 p, vec3 n, vec3 viewDir, Material mat, float distance) {
     mat.color = mix(mat.color, mat.color * 0.3, checker * 0.8);
   }
 
-  vec3 col = vec3(0.06, 0.06, 0.06) * mat.color; // Ambient light
+  vec3 baseColor = mat.color;
+  // HACK: Texture mapping if applicable
+  if(mat.texIndex != -1) {
+    vec2 uv = p.xz * 0.09; // TODO: MAJOR_TODO!! This is hardcoded for the ground plane
+    vec3 texColor = texture(u_textures[0], uv).rgb;
+    baseColor = texColor;
+  }
+
+  vec3 col = baseColor * vec3(0.06, 0.06, 0.06); // Ambient term
 
   // Loop through lights
   for(int i = 0; i < LIGHTS.length(); i++) {
@@ -87,7 +95,7 @@ vec3 shade(vec3 p, vec3 n, vec3 viewDir, Material mat, float distance) {
 
     // Classic diffuse shading
     float diff = max(dot(n, lightDir), 0.0) * mat.diffuse * shadowFactor;
-    col += mat.color * diff * lightCol;
+    col += baseColor * diff * lightCol;
 
     // Specular highlight using basic Blinn-Phong model
     vec3 reflectDir = reflect(-lightDir, n);

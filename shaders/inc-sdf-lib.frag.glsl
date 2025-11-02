@@ -1,3 +1,11 @@
+in vec2 imgCoord;
+out vec4 pixel;
+
+uniform float u_time;
+uniform vec3 u_cameraPos;
+uniform mat4 u_inverseViewProjectionMatrix;
+uniform sampler2D u_textures[4];
+
 struct Hit {
   float d;
   int matID;
@@ -10,6 +18,7 @@ struct Material {
   float hardness;
   bool isChecker;
   bool isReflective;
+  int texIndex;
 };
 
 struct Light {

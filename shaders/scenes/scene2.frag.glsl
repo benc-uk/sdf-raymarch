@@ -3,22 +3,15 @@ precision highp float;
 
 //#include sdflib
 
-in vec2 imgCoord;
-out vec4 pixel;
-
-uniform float u_time;
-uniform vec3 u_cameraPos;
-uniform mat4 u_inverseViewProjectionMatrix;
-
 const float EPSILON = 0.006;
 const int MAX_MARCHING_STEPS = 128;
 const float MAX_VIEW_DISTANCE = 25.0;
 const float CHECK_SIZE = 1.3;
 
-const Light LIGHTS[2] = Light[](Light(vec3(5.0, 8.0, 5.0), vec3(0.67, 0.97, 0.97)), Light(vec3(-4.0, 6.0, -3.0), vec3(1.0, 0.79, 0.61)));
-const Material MATERIALS[3] = Material[](Material(vec3(0.34, 0.09, 0.17), 1.0, 0.0, 1.0, false, false),  // floor reddish
-Material(vec3(0.9, 0.9, 0.95), 0.6, 0.8, 164.0, false, false), // china like
-Material(vec3(0.22, 0.57, 0.11), 1.0, 1.0, 100.0, false, true));  // green slime
+const Light LIGHTS[2] = Light[](Light(vec3(5.0, 8.0, 5.0), vec3(0.67, 0.97, 0.97)), Light(vec3(-3.0, 4.0, 0.0), vec3(0.3, 0.45, 0.91)));
+const Material MATERIALS[3] = Material[](Material(vec3(0.34, 0.09, 0.17), 1.0, 0.0, 1.0, false, false, 0),  // floor reddish
+Material(vec3(0.9, 0.9, 0.95), 0.6, 0.8, 164.0, false, false, -1), // china like
+Material(vec3(0.22, 0.57, 0.11), 1.0, 1.0, 100.0, false, true, -1));  // green slime
 
 float mapCup(vec3 p) {
   float outer = sdfCutHollowSphere(p + vec3(0.0, -2.8, 0.0), 1.8, -0.3, 0.02);
