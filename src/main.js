@@ -9,6 +9,7 @@ import * as twgl from 'twgl.js'
 import { updateStats, initGL, getCanvas } from './gl.js'
 import CameraOrbital from './camera-orbit.js'
 import CameraDirectional from './camera-directional.js'
+import * as dom from './dom-helpers.js'
 
 // These are GLSL shader chunks
 import vertShader from '../shaders/main.vert.glsl?raw'
@@ -52,6 +53,7 @@ const tempSceneShaderMap = {
 export function initUI() {
   const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('#sceneSelect'))
   const resSelector = /** @type {HTMLSelectElement} */ (document.querySelector('#resSelect'))
+  const fullScreenBtn = /** @type {HTMLButtonElement} */ (document.querySelector('#fullScreenBtn'))
 
   const canvas = getCanvas()
   let timeoutId = null
@@ -71,46 +73,46 @@ export function initUI() {
   })
 
   document.addEventListener('mousemove', () => {
-    sceneSelector.classList.remove('hidden')
-    sceneSelector.classList.add('visible')
-    resSelector.classList.remove('hidden')
-    resSelector.classList.add('visible')
+    dom.show(sceneSelector)
+    dom.show(resSelector)
+    dom.show(fullScreenBtn)
 
     if (timeoutId) clearTimeout(timeoutId)
 
     timeoutId = setTimeout(() => {
-      sceneSelector.classList.remove('visible')
-      sceneSelector.classList.add('hidden')
-      resSelector.classList.remove('visible')
-      resSelector.classList.add('hidden')
+      dom.hide(sceneSelector)
+      dom.hide(resSelector)
+      dom.hide(fullScreenBtn)
     }, 3000)
   })
 
   document.addEventListener('mouseleave', () => {
-    sceneSelector.classList.remove('visible')
-    sceneSelector.classList.add('hidden')
-    resSelector.classList.remove('visible')
-    resSelector.classList.add('hidden')
-  })
-
-  // Fullscreen on double-click/tap
-  canvas.addEventListener('dblclick', () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen()
-    } else {
-      document.exitFullscreen()
-    }
+    dom.hide(sceneSelector)
+    dom.hide(resSelector)
+    dom.hide(fullScreenBtn)
   })
 
   resSelector.value = `${gl.canvas.width}x${gl.canvas.height}`
   resSelector.addEventListener('change', (e) => {
-    // save selected resolution to localStorage and reload page
     //@ts-ignore
     const res = e.target.value
     const [w, h] = res.split('x').map(Number)
     localStorage.setItem('resolution', JSON.stringify({ w, h }))
     window.location.reload()
   })
+
+  fullScreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.body.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`)
+      })
+      fullScreenBtn.classList.add('active')
+    } else {
+      fullScreenBtn.classList.remove('active')
+      document.exitFullscreen()
+    }
+  })
+
   localStorage.setItem('resolution', JSON.stringify({ w: gl.canvas.width, h: gl.canvas.height }))
 }
 

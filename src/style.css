@@ -16,7 +16,8 @@ select {
   font-size: 1.2rem;
   border-radius: 0.3rem;
   border: none;
-  background-color: #383838;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px);
   color: #eee;
   position: absolute;
   top: 1rem;
@@ -24,8 +25,31 @@ select {
   width: 11rem;
 }
 
+select option {
+  background-color: #222;
+}
+
 #resSelect {
   top: 4rem;
+}
+
+button {
+  position: absolute;
+  top: 7rem;
+  left: 1rem;
+  padding: 0.5rem 0.4rem;
+  font-size: 1.2rem;
+  border-radius: 0.3rem;
+  border: none;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px);
+  color: #eee;
+  cursor: pointer;
+  width: 11rem;
+}
+
+.active {
+  background-color: #227024;
 }
 
 option {
