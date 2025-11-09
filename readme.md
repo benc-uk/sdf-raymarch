@@ -7,6 +7,7 @@ Try out the live version deployed on Cloudflare Pages:
 
 ## Screenshots
 
+![](./public/img/screen_03.png)
 ![](./public/img/screen_01.png)
 ![](./public/img/screen_02.png)
 

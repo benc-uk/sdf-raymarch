@@ -8,27 +8,33 @@
     <script type="module" src="main.js"></script>
   </head>
   <body>
-    <select class="hidden" id="sceneSelect"></select>
-    <select class="hidden" id="resSelect">
-      <optgroup label="4:3 Aspect">
-        <option value="400x300">400 x 300</option>
-        <option value="800x600">800 x 600</option>
-        <option value="1024x768" selected>1024 x 768</option>
-        <option value="1280x960">1280 x 960</option>
-      </optgroup>
-      <optgroup label="16:9 Aspect">
-        <option value="640x360">640 x 360</option>
-        <option value="1280x720">1280 x 720</option>
-        <option value="1920x1080">1920 x 1080</option>
-      </optgroup>
-      <optgroup label="20:9 Aspect">
-        <option value="600x270">600 x 270</option>
-        <option value="720x324">720 x 324</option>
-        <option value="1080x486">1080 x 486</option>
-        <option value="1440x648">1440 x 648</option>
-      </optgroup>
-    </select>
-    <button id="fullScreenBtn" class="hidden">Full Screen &nbsp; ⛶</button>
+    <section id="controls">
+      <select id="sceneSelect"></select>
+      <select id="resSelect">
+        <optgroup label="4:3 Aspect">
+          <option value="400x300">400 x 300</option>
+          <option value="800x600">800 x 600</option>
+          <option value="1024x768" selected>1024 x 768</option>
+          <option value="1280x960">1280 x 960</option>
+        </optgroup>
+        <optgroup label="16:9 Aspect">
+          <option value="640x360">640 x 360</option>
+          <option value="1280x720">1280 x 720</option>
+          <option value="1920x1080">1920 x 1080</option>
+        </optgroup>
+        <optgroup label="20:9 Aspect">
+          <option value="600x270">600 x 270</option>
+          <option value="720x324">720 x 324</option>
+          <option value="1080x486">1080 x 486</option>
+          <option value="1440x648">1440 x 648</option>
+        </optgroup>
+      </select>
+      <button id="fullScreenBtn">Full Screen &nbsp; ⛶</button>
+    </section>
+
+    <section id="loadingOverlay">LOADING...</section>
+
+    <!-- The canvas is initialized in main.js -->
     <canvas></canvas>
   </body>
 </html>

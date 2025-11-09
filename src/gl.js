@@ -84,8 +84,10 @@ export function initGL(selector = 'canvas', options = defaults) {
 
   if (options.fitToContainer) {
     window.addEventListener('resize', () => {
-      const size = fit(canvas)
-      if (options.resizeCanvas) resize(canvas, size[0], size[1])
+      setTimeout(() => {
+        const size = fit(canvas)
+        if (options.resizeCanvas) resize(canvas, size[0], size[1])
+      }, 100)
     })
   }
 
@@ -171,7 +173,7 @@ function resize(canvas, width, height) {
   }
 }
 
-function fit(canvas) {
+export function fit(canvas) {
   const aspectRatio = canvas.width / canvas.height
 
   // Get container dimensions (or use window if no parent)

@@ -35,5 +35,17 @@
       "speed": 7
     },
     "shaderUrl": "scenes/scene3.frag.glsl"
+  },
+
+  "s4": {
+    "name": "Bumps",
+    "camera": {
+      "type": "orbit",
+      "pitch": 0.3,
+      "target": [0, 0, 0],
+      "radius": 4,
+      "fov": 0.8
+    },
+    "shaderUrl": "scenes/scene4.frag.glsl"
   }
 }

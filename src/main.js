@@ -6,7 +6,8 @@
 import './style.css'
 
 import * as twgl from 'twgl.js'
-import { updateStats, initGL, getCanvas } from './gl.js'
+import { updateStats, initGL, getCanvas, fit } from './gl.js'
+import { createAnimatedNoise3D, createSimplexNoise3D, createTileableSimplexNoise2D } from './gradient-noise.js'
 import CameraOrbital from './camera-orbit.js'
 import CameraDirectional from './camera-directional.js'
 import * as dom from './dom-helpers.js'
@@ -18,6 +19,7 @@ import renderLibFrag from '../shaders/render.frag.glsl?raw'
 import scene1Frag from '../shaders/scenes/scene1.frag.glsl?raw'
 import scene2Frag from '../shaders/scenes/scene2.frag.glsl?raw'
 import scene3Frag from '../shaders/scenes/scene3.frag.glsl?raw'
+import scene4Frag from '../shaders/scenes/scene4.frag.glsl?raw'
 
 //@ts-ignore
 import sceneMap from './scenes.json'
@@ -35,27 +37,26 @@ const gl = initGL('canvas', {
   showFPS: true,
 })
 
+// These are set when switching scenes
 let camera = null
-
-let uniforms = {
-  u_resolution: [gl.canvas.width, gl.canvas.height],
-  u_aspect: gl.canvas.width / gl.canvas.height,
-  u_time: 0,
-}
+let uniforms = {}
 
 // Temporary map of shaders for testing without fetch
 const tempSceneShaderMap = {
   'scenes/scene1.frag.glsl': scene1Frag,
   'scenes/scene2.frag.glsl': scene2Frag,
   'scenes/scene3.frag.glsl': scene3Frag,
+  'scenes/scene4.frag.glsl': scene4Frag,
 }
 
 export function initUI() {
-  const sceneSelector = /** @type {HTMLSelectElement} */ (document.querySelector('#sceneSelect'))
-  const resSelector = /** @type {HTMLSelectElement} */ (document.querySelector('#resSelect'))
-  const fullScreenBtn = /** @type {HTMLButtonElement} */ (document.querySelector('#fullScreenBtn'))
+  const sceneSelector = dom.getSelect('#sceneSelect')
+  const resSelector = dom.getSelect('#resSelect')
+  const fullScreenBtn = dom.getButton('#fullScreenBtn')
+  const controls = dom.getElement('#controls')
 
-  const canvas = getCanvas()
+  dom.hide(controls)
+
   let timeoutId = null
 
   for (const [id, scene] of Object.entries(sceneMap)) {
@@ -65,31 +66,23 @@ export function initUI() {
     sceneSelector.appendChild(option)
   }
 
-  sceneSelector.addEventListener('change', (e) => {
-    //@ts-ignore
-    const scene = e.target.value
-    console.log(`Switching to scene: ${scene}`)
+  sceneSelector.addEventListener('change', () => {
+    const scene = dom.getSelectedValue(sceneSelector)
     switchScene(scene)
   })
 
   document.addEventListener('mousemove', () => {
-    dom.show(sceneSelector)
-    dom.show(resSelector)
-    dom.show(fullScreenBtn)
+    dom.show(controls)
 
     if (timeoutId) clearTimeout(timeoutId)
 
     timeoutId = setTimeout(() => {
-      dom.hide(sceneSelector)
-      dom.hide(resSelector)
-      dom.hide(fullScreenBtn)
+      dom.hide(controls)
     }, 3000)
   })
 
   document.addEventListener('mouseleave', () => {
-    dom.hide(sceneSelector)
-    dom.hide(resSelector)
-    dom.hide(fullScreenBtn)
+    dom.hide(controls)
   })
 
   resSelector.value = `${gl.canvas.width}x${gl.canvas.height}`
@@ -101,7 +94,7 @@ export function initUI() {
     window.location.reload()
   })
 
-  fullScreenBtn.addEventListener('click', () => {
+  fullScreenBtn.addEventListener('click', async () => {
     if (!document.fullscreenElement) {
       document.body.requestFullscreen().catch((err) => {
         console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`)
@@ -109,7 +102,13 @@ export function initUI() {
       fullScreenBtn.classList.add('active')
     } else {
       fullScreenBtn.classList.remove('active')
-      document.exitFullscreen()
+      await document.exitFullscreen()
+      fit(getCanvas()) // Weird bug where canvas size isn't updated on exit fullscreen
+    }
+  })
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+      fullScreenBtn.classList.remove('active')
     }
   })
 
@@ -118,6 +117,8 @@ export function initUI() {
 
 // Switches the current scene by updating the fragment shader.
 export async function switchScene(sceneId) {
+  console.log(`Switching to scene: ${sceneId}`)
+
   const scene = sceneMap[sceneId]
   if (!scene) {
     console.error(`Scene ${sceneId} not found!`)
@@ -162,6 +163,8 @@ export async function switchScene(sceneId) {
   })
 
   uniforms = {
+    u_texNoise2D: createTileableSimplexNoise2D(gl, { size: 1024, scale: 100 }),
+    u_texNoise3D: createSimplexNoise3D(gl, { size: 128, scale: 100 }),
     u_resolution: [gl.canvas.width, gl.canvas.height],
     u_aspect: gl.canvas.width / gl.canvas.height,
     u_time: 0,
@@ -193,6 +196,8 @@ export async function switchScene(sceneId) {
   uniforms.u_inverseViewProjectionMatrix = camera.inverseViewProjectionMatrix
   uniforms.u_cameraPos = camera.pos
   twgl.setUniforms(progInfo, uniforms)
+
+  dom.remove('#loadingOverlay')
 }
 
 // Fake shader preprocessor to carry out #include directives

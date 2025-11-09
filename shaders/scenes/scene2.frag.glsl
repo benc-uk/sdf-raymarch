@@ -9,7 +9,7 @@ const float MAX_VIEW_DISTANCE = 25.0;
 const float CHECK_SIZE = 1.3;
 
 const Light LIGHTS[2] = Light[](Light(vec3(5.0, 8.0, 5.0), vec3(0.97, 0.77, 0.77)), Light(vec3(-3.0, 5.0, 0.0), vec3(0.73, 0.45, 0.91)));
-const Material MATERIALS[3] = Material[](Material(vec3(0.34, 0.09, 0.17), 1.0, 0.0, 1.0, false, false, 0),  // floor reddish
+const Material MATERIALS[3] = Material[](Material(vec3(0.34, 0.09, 0.17), 1.0, 0.0, 1.0, false, false, -1),  // floor reddish
 Material(vec3(0.9, 0.9, 0.95), 0.6, 0.8, 164.0, false, false, -1), // china like
 Material(vec3(0.22, 0.57, 0.11), 1.0, 1.0, 100.0, false, true, -1));  // green slime
 
@@ -63,7 +63,10 @@ float mapSlime(vec3 p) {
 // Map function combining all scene objects
 // This returns a distance and material ID
 Hit map(vec3 p) {
-  float d1 = sdfPlane(p, vec3(0.0, 1.0, 0.0), 0.0); // Ground plane
+  vec3 groundP = p;
+  // Add bumpiness to ground using 2D noise texture HERE
+  float d1 = sdfPlane(groundP, vec3(0.0, 1.0, 0.0), 0.0); // Ground plane
+
   float d2 = mapCup(p);
   float d3 = mapSlime(p);
 

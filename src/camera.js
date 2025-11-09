@@ -105,7 +105,7 @@ export default class Camera {
   }
 
   /**
-   * Enable mouse and touch controls for the camera, this is overridden in subclasses
+   * Enable mouse and touch controls for the camera, this is called by derived classes
    * @param {HTMLCanvasElement} canvas Canvas to capture and handle movements
    * @param {(moveX:number, moveY:number, wheel:number) => void} moveCallback
    */

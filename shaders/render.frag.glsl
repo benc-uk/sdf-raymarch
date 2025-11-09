@@ -141,6 +141,12 @@ void main() {
     vec3 n;
     Material mat = MATERIALS[hit.matID];
 
+    // check material is valid
+    if(hit.matID < 0 || hit.matID >= MATERIALS.length()) {
+      pixel = vec4(1.0, 0.0, 1.0, 1.0); // Magenta error color
+      return;
+    }
+
     // Get normal, we can speed things up a little for the ground plane
     if(hit.matID == 0) {
       n = vec3(0.0, 1.0, 0.0);
@@ -153,20 +159,18 @@ void main() {
     col = shade(p, n, viewDir, mat, hit.d);
 
     // Reflection for reflective materials, needs more rays!
-    for(int i = 0; i < LIGHTS.length(); i++) {
-      if(mat.isReflective) {
-        vec3 reflectDir = reflect(rd, n);
-        Hit reflectHit = raycast(p + n * EPSILON * 10.0, reflectDir);
-        if(reflectHit.matID != -1) {
-          vec3 reflectP = p + reflectDir * reflectHit.d;
-          vec3 reflectN = getNormal(reflectP);
-          Material reflectMat = MATERIALS[reflectHit.matID];
+    if(mat.isReflective) {
+      vec3 reflectDir = reflect(rd, n);
+      Hit reflectHit = raycast(p + n * EPSILON * 10.0, reflectDir);
+      if(reflectHit.matID != -1) {
+        vec3 reflectP = p + reflectDir * reflectHit.d;
+        vec3 reflectN = getNormal(reflectP);
+        Material reflectMat = MATERIALS[reflectHit.matID];
 
-          // Use shade() for reflection calculation
-          vec3 reflectViewDir = normalize(p - reflectP);
-          vec3 reflectCol = shade(reflectP, reflectN, reflectViewDir, reflectMat, reflectHit.d);
-          col += reflectCol * 0.3;
-        }
+        // Use shade() for reflection calculation
+        vec3 reflectViewDir = normalize(p - reflectP);
+        vec3 reflectCol = shade(reflectP, reflectN, reflectViewDir, reflectMat, reflectHit.d);
+        col += reflectCol * 0.3;
       }
     }
   }

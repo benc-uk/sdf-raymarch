@@ -22,8 +22,6 @@ export default class CameraDirectional extends Camera {
    * @param {number} aspectRatio - Aspect ratio of the viewport
    */
   constructor(pos, target, direction, speed, fov, aspectRatio) {
-    console.log(`input ${pos} ${target} ||| ${direction}`)
-
     super(pos, target, fov, aspectRatio)
 
     // normalize moveDir

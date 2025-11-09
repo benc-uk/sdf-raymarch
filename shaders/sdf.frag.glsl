@@ -12,6 +12,10 @@ uniform sampler2D u_texture4;
 uniform sampler2D u_texture5;
 uniform sampler2D u_texture6;
 uniform sampler2D u_texture7;
+uniform sampler2D u_texNoise2D;
+uniform highp sampler3D u_texNoise3D;
+
+#define blankMat Material(vec3(0.0, 0.0, 0.0), 0.0, 0.0, 1.0, false, false, -1)
 
 struct Hit {
   float d;
