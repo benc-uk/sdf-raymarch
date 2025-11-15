@@ -48,7 +48,7 @@ Hit map(vec3 p) {
   float groundY = -2.9;
   vec3 groundPos = vec3(p.x, p.y - groundY, p.z + u_time * 2.0);
   float groundNoise = noise3D(groundPos * 0.6);
-  groundPos -= vec3(0.0, 1.0, 0.0) * groundNoise * 2.2;
+  groundPos -= vec3(0.0, 1.0, 0.0) * groundNoise * 2.0;
   float groundD = sdfPlane(groundPos, vec3(0.0, 1.0, 0.0), 0.0);
 
   float minD = 1e20;

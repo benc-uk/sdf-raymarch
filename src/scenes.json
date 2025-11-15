@@ -21,7 +21,7 @@
       "fov": 0.8
     },
     "shaderUrl": "scenes/scene2.frag.glsl",
-    "textures": ["carpet.jpg"]
+    "textures": ["stone.jpg"]
   },
 
   "s3": {

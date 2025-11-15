@@ -7,7 +7,7 @@ import './style.css'
 
 import * as twgl from 'twgl.js'
 import { updateStats, initGL, getCanvas, fit } from './gl.js'
-import { createAnimatedNoise3D, createSimplexNoise3D, createTileableSimplexNoise2D } from './gradient-noise.js'
+//import { createAnimatedNoise3D, createSimplexNoise3D, createTileableSimplexNoise2D } from './gradient-noise.js'
 import CameraOrbital from './camera-orbit.js'
 import CameraDirectional from './camera-directional.js'
 import * as dom from './dom-helpers.js'
@@ -163,8 +163,7 @@ export async function switchScene(sceneId) {
   })
 
   uniforms = {
-    u_texNoise2D: createTileableSimplexNoise2D(gl, { size: 1024, scale: 100 }),
-    u_texNoise3D: createSimplexNoise3D(gl, { size: 128, scale: 100 }),
+    // u_texNoise3D: createSimplexNoise3D(gl, { size: 128, scale: 100 }),
     u_resolution: [gl.canvas.width, gl.canvas.height],
     u_aspect: gl.canvas.width / gl.canvas.height,
     u_time: 0,
@@ -173,14 +172,13 @@ export async function switchScene(sceneId) {
   // Load any textures for the scene
   if (scene.textures && scene.textures.length > 0) {
     for (const [index, texName] of scene.textures.entries()) {
-      const tex = twgl.createTexture(gl, {
+      uniforms[`u_texture${index}`] = twgl.createTexture(gl, {
         src: `/textures/${texName}`,
         crossOrigin: 'anonymous',
         minMag: gl.LINEAR,
         wrap: gl.REPEAT,
         flipY: 1,
       })
-      uniforms[`u_texture${index}`] = tex
     }
   }
 
