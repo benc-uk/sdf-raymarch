@@ -72,14 +72,18 @@ vec3 shade(vec3 p, vec3 n, vec3 viewDir, Material mat, float distance) {
   }
 
   vec3 baseColor = mat.color;
-  // HACK: Texture mapping if applicable
+
+  // Texture mapping
+  // HACK: This is horrible as bunch of scene specific code is here!
   if(mat.texIndex != -1) {
     if(mat.texIndex == 0) {
-      vec2 uv = p.xz * 0.06;
+      vec2 uv = p.xz * 0.08;
       baseColor = texture(u_texture0, uv).rgb;
     }
     if(mat.texIndex == 1) {
-      vec2 uv = p.xz * 0.06;
+      vec2 uv = p.xz * 0.3;
+      uv.x += sin(u_time) * 0.5;
+      uv.y += u_time * 0.4;
       baseColor = texture(u_texture1, uv).rgb;
     }
     if(mat.texIndex == 2) {

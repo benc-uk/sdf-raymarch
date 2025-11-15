@@ -3,13 +3,13 @@ precision highp float;
 
 //#include sdflib
 
-const float EPSILON = 0.005;
-const int MAX_MARCHING_STEPS = 250;
-const float MAX_VIEW_DISTANCE = 60.0;
+const float EPSILON = 0.02;
+const int MAX_MARCHING_STEPS = 100;
+const float MAX_VIEW_DISTANCE = 40.0;
 const float CHECK_SIZE = 1.3;
 
 Light LIGHTS[1] = Light[](Light(vec3(3.0, 6.0, 6.0), vec3(1.0, 1.0, 1.0)));
-Material MATERIALS[3] = Material[](blankMat, Material(vec3(1.0, 0.25, 0.03), 1.0, 0.9, 48.0, false, false, -1), Material(vec3(0.1, 0.6, 0.1), 1.0, 1.0, 12.0, false, false, -1));
+Material MATERIALS[3] = Material[](blankMat, Material(vec3(0.102, 0.604, 0.82), 1.0, 0.9, 48.0, false, false, -1), Material(vec3(0.1, 0.6, 0.1), 1.0, 1.0, 12.0, false, false, 1));
 
 // Simple hash-based procedural noise to avoid texture sampling artifacts
 vec3 hash3(vec3 p) {
@@ -48,7 +48,7 @@ Hit map(vec3 p) {
   float groundY = -2.9;
   vec3 groundPos = vec3(p.x, p.y - groundY, p.z + u_time * 2.0);
   float groundNoise = noise3D(groundPos * 0.6);
-  groundPos -= vec3(0.0, 1.0, 0.0) * groundNoise * 2.2;
+  groundPos -= vec3(0.0, 1.0, 0.0) * groundNoise * 1.8;
   float groundD = sdfPlane(groundPos, vec3(0.0, 1.0, 0.0), 0.0);
 
   float minD = 1e20;

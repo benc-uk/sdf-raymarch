@@ -21,7 +21,7 @@
       "fov": 0.8
     },
     "shaderUrl": "scenes/scene2.frag.glsl",
-    "textures": ["carpet.jpg"]
+    "textures": ["Rock3.png"]
   },
 
   "s3": {
@@ -46,6 +46,7 @@
       "radius": 4,
       "fov": 0.8
     },
-    "shaderUrl": "scenes/scene4.frag.glsl"
+    "shaderUrl": "scenes/scene4.frag.glsl",
+    "textures": ["Lava_002_COLOR.png"]
   }
 }
