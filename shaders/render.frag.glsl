@@ -94,10 +94,35 @@ vec3 shade(vec3 p, vec3 n, vec3 viewDir, Material mat, float distance) {
 
   vec3 col = baseColor * vec3(0.06, 0.06, 0.06); // Ambient term
 
-  // Loop through lights
-  for(int i = 0; i < LIGHTS.length(); i++) {
-    vec3 lightPos = LIGHTS[i].position;
-    vec3 lightCol = LIGHTS[i].color;
+  // Unrolled light loop for performance (supports up to 2 lights)
+  int numLights = LIGHTS.length();
+  
+  // Process first light
+  if(numLights > 0) {
+    vec3 lightPos = LIGHTS[0].position;
+    vec3 lightCol = LIGHTS[0].color;
+
+    // Light direction & distance
+    vec3 lightDir = normalize(lightPos - p);
+    float lightDist = length(lightPos - p);
+
+    // Soft shadow factor (penumbra sphere tracing). Offset start to reduce self-shadowing acne.
+    float shadowFactor = calcSoftShadow(p + n * EPSILON * 6.0, lightDir, EPSILON, lightDist, 32.0);
+
+    // Classic diffuse shading
+    float diff = max(dot(n, lightDir), 0.0) * mat.diffuse * shadowFactor;
+    col += baseColor * diff * lightCol;
+
+    // Specular highlight using basic Blinn-Phong model
+    vec3 reflectDir = reflect(-lightDir, n);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), mat.hardness);
+    col += vec3(1.0) * spec * mat.specular * shadowFactor * lightCol;
+  }
+
+  // Process second light
+  if(numLights > 1) {
+    vec3 lightPos = LIGHTS[1].position;
+    vec3 lightCol = LIGHTS[1].color;
 
     // Light direction & distance
     vec3 lightDir = normalize(lightPos - p);
